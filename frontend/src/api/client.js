@@ -88,14 +88,3 @@ export function getSession() {
 export function triggerSync() {
   return request('/sync', { method: 'POST' });
 }
-
-export function getConfig() {
-  return request('/config');
-}
-
-export function setApiKey(key) {
-  return request('/config/api-key', {
-    method: 'POST',
-    body: JSON.stringify({ key }),
-  });
-}

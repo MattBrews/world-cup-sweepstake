@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { getSweepstakes, createSweepstake, getSession, logout, triggerSync, getConfig, setApiKey } from '../api/client';
+import { getSweepstakes, createSweepstake, deleteSweepstake, getSession, logout, triggerSync } from '../api/client';
 
 export default function AdminDashboardPage() {
   const navigate = useNavigate();
@@ -8,8 +8,6 @@ export default function AdminDashboardPage() {
   const [session, setSession] = useState(null);
   const [showCreate, setShowCreate] = useState(false);
   const [createForm, setCreateForm] = useState({ name: '', slug: '', adminPassword: '' });
-  const [config, setConfig] = useState({ hasApiKey: false });
-  const [apiKeyValue, setApiKeyValue] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -21,12 +19,9 @@ export default function AdminDashboardPage() {
           return;
         }
         setSession(s);
-        return Promise.all([getSweepstakes(), getConfig()]);
+        return getSweepstakes();
       })
-      .then(([s, c]) => {
-        setSweepstakes(s);
-        setConfig(c);
-      })
+      .then(s => setSweepstakes(s))
       .catch(() => navigate('/admin'))
       .finally(() => setLoading(false));
   }, [navigate]);
@@ -51,20 +46,6 @@ export default function AdminDashboardPage() {
       alert('Sync triggered!');
     } catch (err) {
       alert('Sync failed: ' + err.message);
-    }
-  };
-
-  const handleSetApiKey = async () => {
-    if (!apiKeyValue) return;
-    try {
-      const result = await setApiKey(apiKeyValue);
-      setConfig({ hasApiKey: true });
-      setApiKeyValue('');
-      alert(result.results
-        ? `API key saved! Synced: ${result.results.teams} teams, ${result.results.fixtures} fixtures, ${result.results.standings} standings`
-        : 'API key saved!');
-    } catch (err) {
-      alert('Error: ' + err.message);
     }
   };
 
@@ -103,44 +84,9 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      {!config.hasApiKey && (
-        <div className="glass" style={{ padding: 20, marginBottom: 24, borderColor: 'var(--token-2)' }}>
-          <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 8, color: 'var(--token-2)' }}>
-            API Key Required
-          </h2>
-          <p style={{ fontSize: 13, color: 'var(--color-text-muted)', marginBottom: 12 }}>
-            Enter your API-Football key to fetch live World Cup data. Get one free at dashboard.api-football.com.
-          </p>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <input
-              type="password"
-              value={apiKeyValue}
-              onChange={e => setApiKeyValue(e.target.value)}
-              placeholder="x-apisports-key"
-              style={{
-                flex: 1,
-                padding: '10px 14px',
-                borderRadius: 8,
-                border: '1px solid rgba(255,255,255,0.08)',
-                background: 'rgba(255,255,255,0.04)',
-                color: '#fff',
-                fontSize: 14,
-                outline: 'none',
-              }}
-            />
-            <button onClick={handleSetApiKey} style={{
-              padding: '10px 20px',
-              borderRadius: 8,
-              background: 'var(--color-accent)',
-              color: '#fff',
-              fontWeight: 700,
-              fontSize: 14,
-            }}>
-              Save & Sync
-            </button>
-          </div>
-        </div>
-      )}
+      <div className="glass" style={{ padding: 16, marginBottom: 24, fontSize: 13, color: 'var(--color-text-muted)' }}>
+        Data source: <strong>openfootball/worldcup.json</strong> (free, no API key required, updated daily)
+      </div>
 
       <button
         onClick={() => setShowCreate(!showCreate)}
@@ -220,24 +166,46 @@ export default function AdminDashboardPage() {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {sweepstakes.map(s => (
-          <Link
-            key={s.id}
-            to={`/admin/${s.slug}`}
-            className="glass"
-            style={{
-              padding: '16px 20px',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              transition: 'border-color 0.2s',
-            }}
-          >
-            <div>
-              <div style={{ fontWeight: 700, fontSize: 16 }}>{s.name}</div>
-              <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>/sweepstake/{s.slug}</div>
-            </div>
-            <span style={{ color: 'var(--color-accent)' }}>→</span>
-          </Link>
+          <div key={s.id} className="glass" style={{
+            padding: '16px 20px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}>
+            <Link to={`/admin/${s.slug}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flex: 1, textDecoration: 'none' }}>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--color-text)' }}>{s.name}</div>
+                <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>/sweepstake/{s.slug}</div>
+              </div>
+              <span style={{ color: 'var(--color-accent)' }}>→</span>
+            </Link>
+            <button
+              onClick={async (e) => {
+                e.preventDefault();
+                if (window.confirm(`Delete "${s.name}"? This cannot be undone.`)) {
+                  try {
+                    await deleteSweepstake(s.slug);
+                    setSweepstakes(prev => prev.filter(x => x.id !== s.id));
+                  } catch (err) {
+                    alert('Delete failed: ' + err.message);
+                  }
+                }
+              }}
+              style={{
+                marginLeft: 12,
+                padding: '6px 12px',
+                borderRadius: 6,
+                background: 'rgba(229,62,62,0.15)',
+                color: 'var(--token-1)',
+                fontSize: 12,
+                fontWeight: 600,
+                border: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              Delete
+            </button>
+          </div>
         ))}
       </div>
     </div>

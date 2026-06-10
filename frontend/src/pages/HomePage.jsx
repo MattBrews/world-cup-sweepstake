@@ -60,7 +60,7 @@ export default function HomePage() {
           {sweepstakes.map(s => (
             <Link
               key={s.id}
-              to={`/sweepstake/${s.slug}`}
+              to={`/sweepstake/${s.public_id}`}
               className="glass"
               style={{
                 padding: '18px 24px',

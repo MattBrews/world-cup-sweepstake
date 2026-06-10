@@ -3,11 +3,16 @@ import { getDb } from '../db/connection.js';
 
 const router = Router();
 
-router.get('/:slug/dashboard', (req, res) => {
+function lookupSweep(ref) {
   const db = getDb();
+  let s = db.prepare('SELECT id, name, slug, public_id FROM sweepstakes WHERE public_id = ?').get(ref);
+  if (!s) s = db.prepare('SELECT id, name, slug, public_id FROM sweepstakes WHERE slug = ?').get(ref);
+  return s;
+}
 
-  const sweep = db.prepare('SELECT id, name, slug FROM sweepstakes WHERE slug = ?')
-    .get(req.params.slug);
+router.get('/:ref/dashboard', (req, res) => {
+  const db = getDb();
+  const sweep = lookupSweep(req.params.ref);
   if (!sweep) return res.status(404).json({ error: 'Not found' });
 
   const participants = db.prepare(
@@ -42,34 +47,22 @@ router.get('/:slug/dashboard', (req, res) => {
 });
 
 function detectCurrentStage(fixtures) {
-  const now = new Date();
-
   const stages = ['Group Stage', 'Round of 32', 'Round of 16', 'Quarter-finals', 'Semi-finals', '3rd Place', 'Final'];
 
   const lastUnplayed = fixtures
-    .filter(f => f.status !== 'FT' && f.status !== 'AET' && f.status !== 'PEN')
+    .filter(f => f.status !== 'FT')
     .sort((a, b) => new Date(a.date) - new Date(b.date))[0];
 
   if (!lastUnplayed) return stages[stages.length - 1];
 
-  const round = lastUnplayed.round || '';
-  if (round.toLowerCase().includes('group')) return 'Group Stage';
-  if (round.toLowerCase().includes('round of 32')) return 'Round of 32';
-  if (round.toLowerCase().includes('round of 16')) return 'Round of 16';
-  if (round.toLowerCase().includes('quarter')) return 'Quarter-finals';
-  if (round.toLowerCase().includes('semi')) return 'Semi-finals';
-  if (round.toLowerCase().includes('3rd')) return '3rd Place';
-  if (round.toLowerCase().includes('final')) return 'Final';
-
-  return 'Group Stage';
+  return lastUnplayed.stage || 'Group Stage';
 }
 
-router.get('/:slug/fixtures', (req, res) => {
+router.get('/:ref/fixtures', (req, res) => {
   const db = getDb();
   const { round, stage, status } = req.query;
 
-  const sweep = db.prepare('SELECT id FROM sweepstakes WHERE slug = ?')
-    .get(req.params.slug);
+  const sweep = lookupSweep(req.params.ref);
   if (!sweep) return res.status(404).json({ error: 'Not found' });
 
   let sql = 'SELECT * FROM cached_fixtures WHERE 1=1';
@@ -85,10 +78,9 @@ router.get('/:slug/fixtures', (req, res) => {
   res.json(fixtures);
 });
 
-router.get('/:slug/standings', (req, res) => {
+router.get('/:ref/standings', (req, res) => {
   const db = getDb();
-  const sweep = db.prepare('SELECT id FROM sweepstakes WHERE slug = ?')
-    .get(req.params.slug);
+  const sweep = lookupSweep(req.params.ref);
   if (!sweep) return res.status(404).json({ error: 'Not found' });
 
   const standings = db.prepare(
@@ -97,10 +89,10 @@ router.get('/:slug/standings', (req, res) => {
   res.json(standings);
 });
 
-router.get('/:slug/rounds', (req, res) => {
+router.get('/:ref/rounds', (req, res) => {
   const db = getDb();
   const rounds = db.prepare(
-    'SELECT DISTINCT round FROM cached_fixtures WHERE round IS NOT NULL AND round != "" ORDER BY date'
+    "SELECT round, MIN(date) as first_date FROM cached_fixtures WHERE round IS NOT NULL AND round != '' GROUP BY round ORDER BY first_date"
   ).all();
   res.json(rounds.map(r => r.round));
 });

@@ -1,8 +1,8 @@
 export default function MatchCard({ fixture, homeTeam, awayTeam, participants, teams }) {
   const homeParticipant = participants.find(p => p.team_id === fixture.home_team_id);
   const awayParticipant = participants.find(p => p.team_id === fixture.away_team_id);
-  const isFinished = fixture.status === 'FT' || fixture.status === 'AET' || fixture.status === 'PEN';
-  const isLive = fixture.status === '1H' || fixture.status === '2H' || fixture.status === 'HT' || fixture.status === 'ET';
+  const isFinished = fixture.status === 'FT';
+  const isLive = false;
 
   const date = new Date(fixture.date);
   const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });

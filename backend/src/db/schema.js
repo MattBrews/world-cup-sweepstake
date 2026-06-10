@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import { getDb } from './connection.js';
 
 export function runMigrations() {
@@ -8,6 +9,7 @@ export function runMigrations() {
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
       slug TEXT NOT NULL UNIQUE,
+      public_id TEXT UNIQUE,
       admin_password TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
@@ -38,7 +40,9 @@ export function runMigrations() {
       home_score INTEGER,
       away_score INTEGER,
       status TEXT,
-      venue TEXT
+      venue TEXT,
+      home_placeholder TEXT,
+      away_placeholder TEXT
     );
 
     CREATE TABLE IF NOT EXISTS cached_standings (
@@ -75,4 +79,10 @@ export function runMigrations() {
       value TEXT
     );
   `);
+
+  const missing = db.prepare('SELECT id FROM sweepstakes WHERE public_id IS NULL').all();
+  const update = db.prepare('UPDATE sweepstakes SET public_id = ? WHERE id = ?');
+  for (const row of missing) {
+    update.run(randomBytes(6).toString('hex'), row.id);
+  }
 }

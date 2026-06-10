@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import { Router } from 'express';
 import bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
@@ -9,16 +10,16 @@ const router = Router();
 router.get('/', (req, res) => {
   const db = getDb();
   const list = db.prepare(
-    'SELECT id, name, slug, created_at FROM sweepstakes ORDER BY created_at DESC'
+    'SELECT id, name, slug, public_id, created_at FROM sweepstakes ORDER BY created_at DESC'
   ).all();
   res.json(list);
 });
 
-router.get('/:slug', (req, res) => {
+router.get('/:ref', (req, res) => {
   const db = getDb();
-  const sweep = db.prepare(
-    'SELECT id, name, slug, created_at FROM sweepstakes WHERE slug = ?'
-  ).get(req.params.slug);
+  const { ref } = req.params;
+  let sweep = db.prepare('SELECT id, name, slug, public_id, created_at FROM sweepstakes WHERE public_id = ?').get(ref);
+  if (!sweep) sweep = db.prepare('SELECT id, name, slug, public_id, created_at FROM sweepstakes WHERE slug = ?').get(ref);
   if (!sweep) return res.status(404).json({ error: 'Not found' });
   res.json(sweep);
 });
@@ -36,13 +37,14 @@ router.post('/', requireMasterAdmin, (req, res) => {
   }
 
   const id = uuidv4();
+  const publicId = randomBytes(6).toString('hex');
   const adminHash = adminPassword ? bcrypt.hashSync(adminPassword, 10) : null;
 
   db.prepare(
-    'INSERT INTO sweepstakes (id, name, slug, admin_password) VALUES (?, ?, ?, ?)'
-  ).run(id, name, slug, adminHash);
+    'INSERT INTO sweepstakes (id, name, slug, public_id, admin_password) VALUES (?, ?, ?, ?, ?)'
+  ).run(id, name, slug, publicId, adminHash);
 
-  res.status(201).json({ id, name, slug });
+  res.status(201).json({ id, name, slug, public_id: publicId });
 });
 
 router.put('/:slug', requireMasterAdmin, (req, res) => {

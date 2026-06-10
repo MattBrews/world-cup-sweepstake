@@ -76,11 +76,7 @@ export default function GroupCard({ groupLetter, standings, participants, teamMa
                 overflow: 'hidden',
               }}>
                 {team?.logo_url && (
-                  <img
-                    src={team.logo_url}
-                    alt=""
-                    style={{ width: 18, height: 18, objectFit: 'contain', flexShrink: 0 }}
-                  />
+                  <img src={team.logo_url} alt="" style={{ width: 18, height: 18, objectFit: 'contain', flexShrink: 0 }} />
                 )}
                 <span style={{
                   fontWeight: 500,

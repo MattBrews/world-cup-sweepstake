@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from 'express';
 import session from 'express-session';
 import path from 'node:path';
@@ -7,15 +8,12 @@ import { config } from './config.js';
 import { getDb } from './db/connection.js';
 import { runMigrations } from './db/schema.js';
 import { syncAll } from './services/syncService.js';
-import { setApiKey, hasApiKey } from './services/apiFootball.js';
 
 import authRoutes from './routes/auth.js';
 import sweepstakesRoutes from './routes/sweepstakes.js';
 import participantsRoutes from './routes/participants.js';
 import dashboardRoutes from './routes/dashboard.js';
 import configRoutes from './routes/config.js';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const app = express();
 
@@ -49,7 +47,7 @@ app.post('/api/sync', async (req, res) => {
   }
 });
 
-const frontendDir = path.resolve(__dirname, '../../frontend/dist');
+const frontendDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../frontend/dist');
 app.use(express.static(frontendDir));
 app.get('*', (req, res) => {
   if (!req.path.startsWith('/api')) {
@@ -71,17 +69,9 @@ cron.schedule(`*/${config.syncIntervalMinutes} * * * *`, async () => {
   }
 });
 
-if (config.apiFootballKey) {
-  setApiKey(config.apiFootballKey);
-}
-
-if (hasApiKey()) {
-  syncAll()
-    .then(r => console.log(`[init] Initial sync: ${r.teams} teams, ${r.fixtures} fixtures, ${r.standings} standings`))
-    .catch(e => console.error('[init] Sync error:', e.message));
-} else {
-  console.log('[init] No API key configured — skipping initial sync');
-}
+syncAll()
+  .then(r => console.log(`[init] Initial sync: ${r.teams} teams, ${r.fixtures} fixtures`))
+  .catch(e => console.error('[init] Sync error:', e.message));
 
 app.listen(config.port, () => {
   console.log(`Server running on http://localhost:${config.port}`);
