@@ -1,0 +1,20 @@
+{
+  "name": "world-cup-sweepstake-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "better-sqlite3": "^11.7.0",
+    "cors": "^2.8.5",
+    "express": "^4.21.0",
+    "express-session": "^1.18.1",
+    "node-cron": "^3.0.3",
+    "node-fetch": "^3.3.2",
+    "uuid": "^10.0.0"
+  }
+}

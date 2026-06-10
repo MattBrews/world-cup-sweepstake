@@ -1,0 +1,21 @@
+:root {
+  --color-bg: #0b111e;
+  --color-bg-alt: #0e1726;
+  --color-accent: #ff5a79;
+  --color-text: #e2e8f0;
+  --color-text-muted: #94a3b8;
+  --color-glass: rgba(20, 30, 50, 0.7);
+  --color-glass-border: rgba(255, 255, 255, 0.08);
+  --radius-card: 14px;
+  --radius-pill: 9999px;
+
+  --token-1: #E53E3E;
+  --token-2: #DD6B20;
+  --token-3: #319795;
+  --token-4: #805AD5;
+  --token-5: #3182CE;
+  --token-6: #B7791F;
+  --token-7: #38A169;
+  --token-8: #B83280;
+  --token-9: #2B6CB0;
+}

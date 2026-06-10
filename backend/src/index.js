@@ -1,0 +1,88 @@
+import express from 'express';
+import session from 'express-session';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import cron from 'node-cron';
+import { config } from './config.js';
+import { getDb } from './db/connection.js';
+import { runMigrations } from './db/schema.js';
+import { syncAll } from './services/syncService.js';
+import { setApiKey, hasApiKey } from './services/apiFootball.js';
+
+import authRoutes from './routes/auth.js';
+import sweepstakesRoutes from './routes/sweepstakes.js';
+import participantsRoutes from './routes/participants.js';
+import dashboardRoutes from './routes/dashboard.js';
+import configRoutes from './routes/config.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+const app = express();
+
+app.use(express.json());
+
+app.use(session({
+  secret: config.sessionSecret,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    sameSite: 'lax',
+    maxAge: 24 * 60 * 60 * 1000,
+  },
+}));
+
+runMigrations();
+
+app.use('/api/auth', authRoutes);
+app.use('/api/sweepstakes', sweepstakesRoutes);
+app.use('/api/sweepstakes', participantsRoutes);
+app.use('/api/sweepstakes', dashboardRoutes);
+app.use('/api', configRoutes);
+
+app.post('/api/sync', async (req, res) => {
+  try {
+    const results = await syncAll();
+    res.json(results);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+const frontendDir = path.resolve(__dirname, '../../frontend/dist');
+app.use(express.static(frontendDir));
+app.get('*', (req, res) => {
+  if (!req.path.startsWith('/api')) {
+    res.sendFile(path.join(frontendDir, 'index.html'));
+  }
+});
+
+const dbPath = path.join(config.dataDir, 'sweepstakes.db');
+console.log(`Database: ${dbPath}`);
+console.log(`Sync interval: every ${config.syncIntervalMinutes} minutes`);
+
+cron.schedule(`*/${config.syncIntervalMinutes} * * * *`, async () => {
+  console.log('[sync] Starting scheduled sync...');
+  try {
+    const results = await syncAll();
+    console.log(`[sync] Complete: ${results.teams} teams, ${results.fixtures} fixtures, ${results.standings} standings`);
+  } catch (err) {
+    console.error('[sync] Error:', err.message);
+  }
+});
+
+if (config.apiFootballKey) {
+  setApiKey(config.apiFootballKey);
+}
+
+if (hasApiKey()) {
+  syncAll()
+    .then(r => console.log(`[init] Initial sync: ${r.teams} teams, ${r.fixtures} fixtures, ${r.standings} standings`))
+    .catch(e => console.error('[init] Sync error:', e.message));
+} else {
+  console.log('[init] No API key configured — skipping initial sync');
+}
+
+app.listen(config.port, () => {
+  console.log(`Server running on http://localhost:${config.port}`);
+});

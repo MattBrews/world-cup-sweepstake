@@ -1,0 +1,21 @@
+version: "3.9"
+
+services:
+  app:
+    build: .
+    container_name: world-cup-sweepstake
+    ports:
+      - "3000:3000"
+    environment:
+      - API_FOOTBALL_KEY=${API_FOOTBALL_KEY}
+      - MASTER_PASSWORD=${MASTER_PASSWORD}
+      - PORT=3000
+      - DATA_DIR=/data
+      - SYNC_INTERVAL_MINUTES=${SYNC_INTERVAL_MINUTES:-120}
+      - SESSION_SECRET=${SESSION_SECRET:-}
+    volumes:
+      - sweepstake_data:/data
+    restart: unless-stopped
+
+volumes:
+  sweepstake_data:
