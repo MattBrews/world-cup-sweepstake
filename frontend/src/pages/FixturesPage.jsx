@@ -265,6 +265,7 @@ export default function FixturesPage() {
                         homeTeam={teamMap[f.home_team_id]}
                         awayTeam={teamMap[f.away_team_id]}
                         participants={data.participants}
+                        allFixtures={data.fixtures}
                       />
                     ))}
                   </div>

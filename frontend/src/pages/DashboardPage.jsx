@@ -124,6 +124,7 @@ export default function DashboardPage() {
                   awayTeam={teamMap[f.away_team_id]}
                   participants={data.participants}
                   teams={data.teams}
+                  allFixtures={data.fixtures}
                 />
               </div>
             ))}

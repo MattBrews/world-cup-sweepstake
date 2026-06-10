@@ -133,7 +133,11 @@ export default function StatsPage() {
 
       {view === 'person' ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {leaderboard.map((person, i) => (
+          {leaderboard.length === 0 ? (
+            <div className="glass" style={{ textAlign: 'center', padding: 40, color: 'var(--color-text-muted)' }}>
+              No participants yet. Add some from the admin panel.
+            </div>
+          ) : leaderboard.map((person, i) => (
             <div key={person.name} className="glass" style={{ overflow: 'hidden' }}>
               <div style={{
                 padding: '12px 20px',
