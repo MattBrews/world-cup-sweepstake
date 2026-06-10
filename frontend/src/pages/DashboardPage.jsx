@@ -64,7 +64,7 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div style={{ maxWidth: 960, margin: '0 auto', padding: '24px 16px' }}>
+    <div style={{ maxWidth: 960, margin: '0 auto', padding: '24px 16px', overflowX: 'hidden' }}>
       <div style={{ display: 'flex', gap: 4, marginBottom: 24 }}>
         {navPages.map(p => {
           const isActive = location.pathname === p.path;
@@ -105,6 +105,32 @@ export default function DashboardPage() {
         }}>
           {data.sweepstake.name}
         </h1>
+      </div>
+
+      <div style={{ marginBottom: 20 }}>
+        <h3 style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-text-muted)', marginBottom: 8 }}>
+          Up Next
+        </h3>
+        <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
+          {data.fixtures
+            .filter(f => f.status !== 'FT')
+            .sort((a, b) => new Date(a.date) - new Date(b.date))
+            .slice(0, 5)
+            .map(f => (
+              <div key={f.id} style={{ width: 240, flexShrink: 0 }}>
+                <MatchCard
+                  fixture={f}
+                  homeTeam={teamMap[f.home_team_id]}
+                  awayTeam={teamMap[f.away_team_id]}
+                  participants={data.participants}
+                  teams={data.teams}
+                />
+              </div>
+            ))}
+          {data.fixtures.filter(f => f.status !== 'FT').length === 0 && (
+            <p style={{ color: 'var(--color-text-muted)', fontSize: 13, padding: '8px 0' }}>All matches played.</p>
+          )}
+        </div>
       </div>
 
       <div style={{ marginBottom: 16 }}>

@@ -88,7 +88,7 @@ export default function StatsPage() {
   ];
 
   return (
-    <div style={{ maxWidth: 960, margin: '0 auto', padding: '24px 16px' }}>
+    <div style={{ maxWidth: 960, margin: '0 auto', padding: '24px 16px', overflowX: 'hidden' }}>
       <div style={{ display: 'flex', gap: 4, marginBottom: 24 }}>
         {navPages.map(p => {
           const isActive = location.pathname === p.path;

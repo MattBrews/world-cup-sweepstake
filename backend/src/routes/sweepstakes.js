@@ -48,11 +48,17 @@ router.post('/', requireMasterAdmin, (req, res) => {
 });
 
 router.put('/:slug', requireMasterAdmin, (req, res) => {
-  const { name, adminPassword } = req.body;
+  const { name, adminPassword, slug } = req.body;
   const db = getDb();
-  const sweep = db.prepare('SELECT id FROM sweepstakes WHERE slug = ?').get(req.params.slug);
+  const sweep = db.prepare('SELECT id, public_id FROM sweepstakes WHERE slug = ?').get(req.params.slug);
   if (!sweep) return res.status(404).json({ error: 'Not found' });
 
+  if (slug !== undefined) {
+    if (!slug) return res.status(400).json({ error: 'Slug cannot be empty' });
+    const existing = db.prepare('SELECT id FROM sweepstakes WHERE slug = ? AND id != ?').get(slug, sweep.id);
+    if (existing) return res.status(409).json({ error: 'Slug already taken' });
+    db.prepare('UPDATE sweepstakes SET slug = ? WHERE id = ?').run(slug, sweep.id);
+  }
   if (name !== undefined) {
     db.prepare('UPDATE sweepstakes SET name = ? WHERE id = ?').run(name, sweep.id);
   }
@@ -61,7 +67,8 @@ router.put('/:slug', requireMasterAdmin, (req, res) => {
     db.prepare('UPDATE sweepstakes SET admin_password = ? WHERE id = ?').run(hash, sweep.id);
   }
 
-  res.json({ ok: true });
+  const updated = db.prepare('SELECT id, name, slug, public_id FROM sweepstakes WHERE id = ?').get(sweep.id);
+  res.json(updated);
 });
 
 router.delete('/:slug', requireMasterAdmin, (req, res) => {
