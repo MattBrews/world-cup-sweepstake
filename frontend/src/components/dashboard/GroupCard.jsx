@@ -1,11 +1,25 @@
 import Card, { Badge } from '../ui/Card';
-import ParticipantBadge from './ParticipantBadge';
 
 const tokenColors = [
   'var(--token-1)', 'var(--token-2)', 'var(--token-3)',
   'var(--token-4)', 'var(--token-5)', 'var(--token-6)',
   'var(--token-7)', 'var(--token-8)', 'var(--token-9)',
 ];
+
+function ParticipantBadge({ name, color }) {
+  return (
+    <span style={{
+      fontSize: 10,
+      fontWeight: 600,
+      color,
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+    }}>
+      {name}
+    </span>
+  );
+}
 
 export default function GroupCard({ groupLetter, standings, participants, teamMap, tokenIndex }) {
   const color = tokenColors[tokenIndex % tokenColors.length];
@@ -73,20 +87,24 @@ export default function GroupCard({ groupLetter, standings, participants, teamMa
                 display: 'flex',
                 alignItems: 'center',
                 gap: 8,
-                overflow: 'hidden',
+                minWidth: 0,
               }}>
                 {team?.logo_url && (
                   <img src={team.logo_url} alt="" style={{ width: 18, height: 18, objectFit: 'contain', flexShrink: 0 }} />
                 )}
-                <span style={{
-                  fontWeight: 500,
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                }}>
-                  {team?.name || `Team #${row.team_id}`}
-                  {participant && <ParticipantBadge name={participant.name} color={color} />}
-                </span>
+                <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                  <span style={{
+                    fontWeight: 500,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}>
+                    {team?.name || `Team #${row.team_id}`}
+                  </span>
+                  {participant && (
+                    <ParticipantBadge name={participant.name} color={color} />
+                  )}
+                </div>
               </div>
               <span style={{ textAlign: 'center', fontWeight: 600 }}>{row.played}</span>
               <span style={{ textAlign: 'center', color: row.win > 0 ? 'var(--token-7)' : undefined }}>{row.win}</span>

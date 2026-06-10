@@ -123,6 +123,7 @@ export default function DashboardPage() {
       {isKnockout ? (
         <BracketView
           fixtures={stageFixtures}
+          allFixtures={data.fixtures}
           teams={data.teams}
           participants={data.participants}
         />

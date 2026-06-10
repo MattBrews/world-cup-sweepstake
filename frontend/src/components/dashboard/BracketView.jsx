@@ -1,22 +1,76 @@
 const BRACKET_ROUNDS = [
-  { key: 'Round of 32', label: 'Round of 32', matches: 16 },
-  { key: 'Round of 16', label: 'Round of 16', matches: 8 },
-  { key: 'Quarter-finals', label: 'Quarter-finals', matches: 4 },
-  { key: 'Semi-finals', label: 'Semi-finals', matches: 2 },
-  { key: '3rd Place', label: '3rd Place', matches: 1 },
+  { key: 'Round of 32', label: 'R32', matches: 16 },
+  { key: 'Round of 16', label: 'R16', matches: 8 },
+  { key: 'Quarter-finals', label: 'QF', matches: 4 },
+  { key: 'Semi-finals', label: 'SF', matches: 2 },
+  { key: '3rd Place', label: '3rd', matches: 1 },
   { key: 'Final', label: 'Final', matches: 1 },
 ];
 
-export default function BracketView({ fixtures, teams, participants }) {
+function buildRoundPositions(allFixtures) {
+  const byStage = {};
+  for (const f of allFixtures) {
+    if (!byStage[f.stage]) byStage[f.stage] = [];
+    byStage[f.stage].push(f);
+  }
+  const pos = {};
+  for (const stage of Object.keys(byStage)) {
+    const sorted = byStage[stage].sort((a, b) => new Date(a.date) - new Date(b.date));
+    sorted.forEach((f, i) => { pos[f.id] = i + 1; });
+  }
+  return pos;
+}
+
+function shortRound(key) {
+  for (const r of BRACKET_ROUNDS) if (r.key === key) return r.label;
+  return key;
+}
+
+function feederLabel(label, fixtureMap, roundPositions) {
+  if (!label || label === 'null') return null;
+  if (typeof label !== 'string') return null;
+  if (label.startsWith('W')) {
+    const fid = parseInt(label.slice(1));
+    const feeder = fixtureMap[fid];
+    if (feeder) {
+      const pos = roundPositions[fid] || '?';
+      return `Winner of ${shortRound(feeder.stage)} #${pos}`;
+    }
+  }
+  if (label.startsWith('L')) {
+    const fid = parseInt(label.slice(1));
+    const feeder = fixtureMap[fid];
+    if (feeder) {
+      const pos = roundPositions[fid] || '?';
+      return `Loser of ${shortRound(feeder.stage)} #${pos}`;
+    }
+  }
+  if (/^\d[A-Z]$/.test(label)) {
+    const pos = label[0] === '1' ? 'Winner' : 'Runner-up';
+    return `Group ${label[1]} ${pos}`;
+  }
+  const m = label.match(/^(\d)([A-Z])\/([A-Z/]+)$/);
+  if (m) return `Best 3rd (${m[2]}/${m[3]})`;
+  return label;
+}
+
+export default function BracketView({ fixtures, allFixtures = [], teams, participants = [] }) {
+  const fixtureMap = {};
+  for (const f of allFixtures) fixtureMap[f.id] = f;
+
+  const teamToParticipant = {};
+  for (const p of participants) {
+    teamToParticipant[p.team_id] = p.name;
+  }
+
+  const roundPositions = buildRoundPositions(allFixtures);
+
   const roundFixtures = {};
   for (const r of BRACKET_ROUNDS) {
     roundFixtures[r.key] = fixtures
       .filter(f => f.stage === r.key)
       .sort((a, b) => new Date(a.date) - new Date(b.date));
   }
-
-  const activeRounds = BRACKET_ROUNDS.filter(r => (roundFixtures[r.key] || []).length > 0);
-  const startIdx = activeRounds.length > 0 ? BRACKET_ROUNDS.indexOf(activeRounds[0]) : 0;
 
   const getTeam = (id) => teams.find(t => t.id === id);
 
@@ -62,8 +116,11 @@ export default function BracketView({ fixtures, teams, participants }) {
                 const homeTeam = getTeam(f.home_team_id);
                 const awayTeam = getTeam(f.away_team_id);
                 const isFinished = f.status === 'FT';
-                const homeLabel = homeTeam?.name || (f.home_team_id === null ? roundLabel(f, 'home') : '?');
-                const awayLabel = awayTeam?.name || (f.away_team_id === null ? roundLabel(f, 'away') : '?');
+                const pos = roundPositions[f.id];
+                const homeLabel = homeTeam?.name ||
+                  (f.home_team_id === null ? (feederLabel(f.home_placeholder, fixtureMap, roundPositions) || 'TBD') : '?');
+                const awayLabel = awayTeam?.name ||
+                  (f.away_team_id === null ? (feederLabel(f.away_placeholder, fixtureMap, roundPositions) || 'TBD') : '?');
 
                 return (
                   <div key={f.id} style={{ position: 'relative' }}>
@@ -82,38 +139,76 @@ export default function BracketView({ fixtures, teams, participants }) {
                       padding: '10px 12px',
                       borderLeft: `3px solid ${isFinished ? 'var(--token-7)' : 'rgba(255,255,255,0.1)'}`,
                     }}>
+                      {pos && (
+                        <div style={{
+                          fontSize: 10,
+                          fontWeight: 700,
+                          color: 'rgba(255,255,255,0.25)',
+                          marginBottom: 4,
+                        }}>
+                          #{pos}
+                        </div>
+                      )}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, overflow: 'hidden' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
                             {homeTeam?.logo_url && <img src={homeTeam.logo_url} alt="" style={{ width: 16, height: 16, flexShrink: 0 }} />}
-                            <span style={{
-                              fontWeight: homeTeam ? 600 : 400,
-                              whiteSpace: 'nowrap',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              color: homeTeam ? undefined : 'var(--color-text-muted)',
-                              fontStyle: homeTeam ? undefined : 'italic',
-                            }}>
-                              {homeLabel}
-                            </span>
+                            <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                              <span style={{
+                                fontWeight: homeTeam ? 600 : 400,
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                color: homeTeam ? undefined : 'var(--color-text-muted)',
+                                fontStyle: homeTeam ? undefined : 'italic',
+                              }}>
+                                {homeLabel}
+                              </span>
+                              {homeTeam && teamToParticipant[homeTeam.id] && (
+                                <span style={{
+                                  fontSize: 10,
+                                  fontWeight: 600,
+                                  color: 'var(--token-7)',
+                                  whiteSpace: 'nowrap',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                }}>
+                                  {teamToParticipant[homeTeam.id]}
+                                </span>
+                              )}
+                            </div>
                           </div>
                           <span style={{ fontWeight: 800, marginLeft: 8, flexShrink: 0 }}>
                             {isFinished ? (f.home_score ?? '-') : '-'}
                           </span>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, overflow: 'hidden' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
                             {awayTeam?.logo_url && <img src={awayTeam.logo_url} alt="" style={{ width: 16, height: 16, flexShrink: 0 }} />}
-                            <span style={{
-                              fontWeight: awayTeam ? 600 : 400,
-                              whiteSpace: 'nowrap',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              color: awayTeam ? undefined : 'var(--color-text-muted)',
-                              fontStyle: awayTeam ? undefined : 'italic',
-                            }}>
-                              {awayLabel}
-                            </span>
+                            <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                              <span style={{
+                                fontWeight: awayTeam ? 600 : 400,
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                color: awayTeam ? undefined : 'var(--color-text-muted)',
+                                fontStyle: awayTeam ? undefined : 'italic',
+                              }}>
+                                {awayLabel}
+                              </span>
+                              {awayTeam && teamToParticipant[awayTeam.id] && (
+                                <span style={{
+                                  fontSize: 10,
+                                  fontWeight: 600,
+                                  color: 'var(--token-7)',
+                                  whiteSpace: 'nowrap',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                }}>
+                                  {teamToParticipant[awayTeam.id]}
+                                </span>
+                              )}
+                            </div>
                           </div>
                           <span style={{ fontWeight: 800, marginLeft: 8, flexShrink: 0 }}>
                             {isFinished ? (f.away_score ?? '-') : '-'}
@@ -130,21 +225,4 @@ export default function BracketView({ fixtures, teams, participants }) {
       })}
     </div>
   );
-}
-
-function roundLabel(f, side) {
-  const label = side === 'home' ? (f.home_placeholder || f.team1) : (f.away_placeholder || f.team2);
-  if (!label || label === 'null') return 'TBD';
-  if (typeof label === 'string') {
-    if (label.startsWith('W')) return `Match ${label.slice(1)} Winner`;
-    if (label.startsWith('L')) return `Match ${label.slice(1)} Loser`;
-    if (/^\d[A-Z]$/.test(label)) {
-      const pos = label[0] === '1' ? 'Winner' : 'Runner-up';
-      return `Group ${label[1]} ${pos}`;
-    }
-    const m = label.match(/^(\d)([A-Z])\/([A-Z/]+)$/);
-    if (m) return `Best 3rd (Grp ${m[2]}+)`;
-    return label;
-  }
-  return 'TBD';
 }
