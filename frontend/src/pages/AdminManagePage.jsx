@@ -68,7 +68,7 @@ export default function AdminManagePage() {
   if (!data) return <div style={{ textAlign: 'center', padding: 80 }}>Not found.</div>;
 
   return (
-    <div style={{ maxWidth: 700, margin: '0 auto', padding: '32px 24px' }}>
+    <div style={{ maxWidth: 960, margin: '0 auto', padding: '24px 16px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <div>
           <h1 style={{ fontSize: 28, fontWeight: 800, color: 'var(--color-accent)' }}>{data.sweepstake.name}</h1>

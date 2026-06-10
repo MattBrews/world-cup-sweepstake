@@ -1,6 +1,42 @@
+import { useState, useEffect } from 'react';
+
 const STAGES = ['Group Stage', 'Round of 32', 'Round of 16', 'Quarter-finals', 'Semi-finals', '3rd Place', 'Final'];
 
 export default function StageNav({ current, activeStage, onSelect }) {
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 600);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 600);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  if (isMobile) {
+    return (
+      <select
+        value={activeStage || current}
+        onChange={e => onSelect?.(e.target.value)}
+        style={{
+          width: '100%',
+          padding: '10px 14px',
+          borderRadius: 8,
+          border: '1px solid rgba(255,255,255,0.08)',
+          background: 'rgba(255,255,255,0.04)',
+          color: '#fff',
+          fontSize: 14,
+          fontWeight: 600,
+          outline: 'none',
+        }}
+      >
+        {STAGES.map(stage => (
+          <option key={stage} value={stage} style={{ background: '#0b111e' }}>
+            {stage}
+          </option>
+        ))}
+      </select>
+    );
+  }
+
   const currentIdx = STAGES.indexOf(activeStage || current);
 
   return (
@@ -20,9 +56,10 @@ export default function StageNav({ current, activeStage, onSelect }) {
             key={stage}
             onClick={() => onSelect?.(stage)}
             style={{
-              padding: '8px 16px',
+              flex: 1,
+              padding: '8px 8px',
               borderRadius: 20,
-              fontSize: 13,
+              fontSize: 12,
               fontWeight: 600,
               whiteSpace: 'nowrap',
               background: isActive

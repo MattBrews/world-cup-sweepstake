@@ -28,7 +28,7 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div style={{ maxWidth: 400, margin: '0 auto', padding: '80px 24px' }}>
+    <div style={{ maxWidth: 400, margin: '0 auto', padding: '80px 16px' }}>
       <div style={{ textAlign: 'center', marginBottom: 32 }}>
         <h1 style={{ fontSize: 28, fontWeight: 800, color: 'var(--color-accent)' }}>Admin Login</h1>
         <p style={{ color: 'var(--color-text-muted)', fontSize: 14, marginTop: 8 }}>

@@ -14,7 +14,7 @@ export default function HomePage() {
   }, []);
 
   return (
-    <div style={{ maxWidth: 800, margin: '0 auto', padding: '60px 24px' }}>
+    <div style={{ maxWidth: 960, margin: '0 auto', padding: '48px 16px' }}>
       <div style={{ textAlign: 'center', marginBottom: 48 }}>
         <div style={{ fontSize: 48, marginBottom: 12, opacity: 0.9, display: 'flex', justifyContent: 'center', gap: 8 }}>
           <span>🏆</span>

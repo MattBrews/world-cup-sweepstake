@@ -64,8 +64,8 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 24px' }}>
-      <div style={{ display: 'flex', gap: 4, marginBottom: 24, flexWrap: 'wrap' }}>
+    <div style={{ maxWidth: 960, margin: '0 auto', padding: '24px 16px' }}>
+      <div style={{ display: 'flex', gap: 4, marginBottom: 24 }}>
         {navPages.map(p => {
           const isActive = location.pathname === p.path;
           return (
@@ -73,10 +73,12 @@ export default function DashboardPage() {
               key={p.label}
               to={p.path}
               style={{
-                padding: '8px 18px',
+                flex: 1,
+                padding: '8px 8px',
                 borderRadius: 20,
-                fontSize: 13,
+                fontSize: 12,
                 fontWeight: 600,
+                textAlign: 'center',
                 background: isActive ? 'var(--color-accent)' : 'rgba(255,255,255,0.04)',
                 color: isActive ? '#fff' : 'var(--color-text)',
                 border: '1px solid rgba(255,255,255,0.06)',
@@ -102,19 +104,19 @@ export default function DashboardPage() {
         </h1>
       </div>
 
-      <div style={{ marginBottom: 20 }}>
-        <ProgressBar
-          current={stageCompleted}
-          total={stageTotal}
-          statusText={`${activeStage} (${stageCompleted}/${stageTotal} completed)`}
-        />
-      </div>
-
-      <div style={{ marginBottom: 24 }}>
+      <div style={{ marginBottom: 16 }}>
         <StageNav
           current={data.currentStage}
           activeStage={activeStage}
           onSelect={setActiveStage}
+        />
+      </div>
+
+      <div style={{ marginBottom: 20 }}>
+        <ProgressBar
+          current={stageCompleted}
+          total={stageTotal}
+          statusText={activeStage}
         />
       </div>
 
