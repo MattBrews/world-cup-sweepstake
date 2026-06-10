@@ -2,7 +2,7 @@ export default function Toggle({ options, selected, onSelect }) {
   return (
     <div style={{
       display: 'inline-flex',
-      borderRadius: 8,
+      borderRadius: 9999,
       background: 'rgba(255,255,255,0.04)',
       padding: 3,
       gap: 2,
@@ -15,10 +15,10 @@ export default function Toggle({ options, selected, onSelect }) {
             onClick={() => onSelect(opt.value)}
             style={{
               padding: '6px 16px',
-              borderRadius: 6,
+              borderRadius: 9999,
               fontSize: 13,
               fontWeight: 600,
-              background: isActive ? 'var(--color-accent)' : 'transparent',
+              background: isActive ? 'var(--gradient-accent)' : 'transparent',
               color: isActive ? '#fff' : 'var(--color-text-muted)',
               transition: 'all 0.2s',
             }}

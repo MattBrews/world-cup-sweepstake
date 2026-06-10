@@ -93,7 +93,7 @@ export default function AdminDashboardPage() {
         style={{
           padding: '10px 20px',
           borderRadius: 8,
-          background: 'var(--color-accent)',
+          background: 'var(--gradient-accent)',
           color: '#fff',
           fontWeight: 700,
           fontSize: 14,

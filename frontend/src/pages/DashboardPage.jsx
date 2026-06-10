@@ -79,7 +79,7 @@ export default function DashboardPage() {
                 fontSize: 12,
                 fontWeight: 600,
                 textAlign: 'center',
-                background: isActive ? 'var(--color-accent)' : 'rgba(255,255,255,0.04)',
+                background: isActive ? 'var(--gradient-accent)' : 'rgba(255,255,255,0.04)',
                 color: isActive ? '#fff' : 'var(--color-text)',
                 border: '1px solid rgba(255,255,255,0.06)',
                 textDecoration: 'none',
@@ -97,7 +97,10 @@ export default function DashboardPage() {
         <h1 style={{
           fontSize: 32,
           fontWeight: 800,
-          color: 'var(--color-accent)',
+          background: 'var(--gradient-accent)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text',
           letterSpacing: '-0.02em',
         }}>
           {data.sweepstake.name}

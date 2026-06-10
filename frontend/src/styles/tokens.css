@@ -9,6 +9,8 @@
   --radius-card: 14px;
   --radius-pill: 9999px;
 
+  --gradient-accent: linear-gradient(to right, #F59E0B, #EF4444, #EC4899);
+
   --token-1: #E53E3E;
   --token-2: #DD6B20;
   --token-3: #319795;

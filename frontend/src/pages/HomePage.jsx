@@ -45,7 +45,7 @@ export default function HomePage() {
             style={{
               display: 'inline-block',
               padding: '10px 24px',
-              background: 'var(--color-accent)',
+              background: 'var(--gradient-accent)',
               color: '#fff',
               borderRadius: 999,
               fontWeight: 600,

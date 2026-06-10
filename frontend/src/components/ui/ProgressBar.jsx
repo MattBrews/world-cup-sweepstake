@@ -32,7 +32,7 @@ export default function ProgressBar({ current, total, label, statusText }) {
           width: `${pct}%`,
           height: '100%',
           borderRadius: 3,
-          background: 'linear-gradient(90deg, #DD6B20, #ff5a79)',
+          background: 'var(--gradient-accent)',
           transition: 'width 0.5s ease',
         }} />
       </div>

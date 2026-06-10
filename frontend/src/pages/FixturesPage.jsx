@@ -94,7 +94,7 @@ export default function FixturesPage() {
                 fontSize: 12,
                 fontWeight: 600,
                 textAlign: 'center',
-                background: isActive ? 'var(--color-accent)' : 'rgba(255,255,255,0.04)',
+                background: isActive ? 'var(--gradient-accent)' : 'rgba(255,255,255,0.04)',
                 color: isActive ? '#fff' : 'var(--color-text)',
                 border: '1px solid rgba(255,255,255,0.06)',
                 textDecoration: 'none',
@@ -121,7 +121,7 @@ export default function FixturesPage() {
             fontWeight: 700,
             textTransform: 'uppercase',
             letterSpacing: '0.05em',
-            background: viewMode === 'all' ? 'var(--color-accent)' : 'rgba(255,255,255,0.04)',
+            background: viewMode === 'all' ? 'var(--gradient-accent)' : 'rgba(255,255,255,0.04)',
             color: viewMode === 'all' ? '#fff' : 'var(--color-text-muted)',
             border: '1px solid rgba(255,255,255,0.06)',
           }}
@@ -144,7 +144,7 @@ export default function FixturesPage() {
               fontWeight: 700,
               textTransform: 'uppercase',
               letterSpacing: '0.05em',
-              background: viewMode === m ? 'var(--color-accent)' : 'rgba(255,255,255,0.04)',
+              background: viewMode === m ? 'var(--gradient-accent)' : 'rgba(255,255,255,0.04)',
               color: viewMode === m ? '#fff' : 'var(--color-text-muted)',
               border: '1px solid rgba(255,255,255,0.06)',
             }}
@@ -168,7 +168,7 @@ export default function FixturesPage() {
                 borderRadius: 20,
                 fontSize: 13,
                 fontWeight: 600,
-                background: filterDate === d ? 'var(--color-accent)' : 'rgba(255,255,255,0.04)',
+                background: filterDate === d ? 'var(--gradient-accent)' : 'rgba(255,255,255,0.04)',
                 color: filterDate === d ? '#fff' : 'var(--color-text)',
                 border: '1px solid rgba(255,255,255,0.06)',
               }}
@@ -195,7 +195,7 @@ export default function FixturesPage() {
                 borderRadius: 20,
                 fontSize: 13,
                 fontWeight: 600,
-                background: isActive ? 'var(--color-accent)' : 'rgba(255,255,255,0.04)',
+                background: isActive ? 'var(--gradient-accent)' : 'rgba(255,255,255,0.04)',
                 color: isActive ? '#fff' : 'var(--color-text)',
                 border: '1px solid rgba(255,255,255,0.06)',
               }}
@@ -215,7 +215,7 @@ export default function FixturesPage() {
                 borderRadius: 20,
                 fontSize: 13,
                 fontWeight: 600,
-                background: isActive ? 'var(--color-accent)' : 'rgba(255,255,255,0.04)',
+                background: isActive ? 'var(--gradient-accent)' : 'rgba(255,255,255,0.04)',
                 color: isActive ? '#fff' : 'var(--color-text)',
                 border: '1px solid rgba(255,255,255,0.06)',
               }}

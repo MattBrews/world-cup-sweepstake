@@ -63,7 +63,7 @@ export default function StageNav({ current, activeStage, onSelect }) {
               fontWeight: 600,
               whiteSpace: 'nowrap',
               background: isActive
-                ? 'var(--color-accent)'
+                ? 'var(--gradient-accent)'
                 : isCurrent
                   ? 'rgba(255,90,121,0.15)'
                   : 'rgba(255,255,255,0.04)',
