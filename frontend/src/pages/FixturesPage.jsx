@@ -3,6 +3,10 @@ import { useParams, Link, useLocation } from 'react-router-dom';
 import { getDashboard } from '../api/client';
 import MatchCard from '../components/dashboard/MatchCard';
 
+function ukDate(isoStr) {
+  return new Date(isoStr).toLocaleDateString('en-CA', { timeZone: 'Europe/London' });
+}
+
 export default function FixturesPage() {
   const { publicId } = useParams();
   const location = useLocation();
@@ -28,44 +32,44 @@ export default function FixturesPage() {
   if (filterDate) {
     if (viewMode === 'month') {
       const m = filterDate.slice(0, 7);
-      fixtures = fixtures.filter(f => f.date.slice(0, 7) === m);
+      fixtures = fixtures.filter(f => ukDate(f.date).slice(0, 7) === m);
     } else if (viewMode === 'week') {
-      const start = new Date(filterDate + 'T12:00:00Z');
-      const end = new Date(start);
-      end.setUTCDate(end.getUTCDate() + 7);
+      const endDate = new Date(filterDate + 'T12:00:00+01:00');
+      endDate.setUTCDate(endDate.getUTCDate() + 7);
+      const endStr = endDate.toLocaleDateString('en-CA', { timeZone: 'Europe/London' });
       fixtures = fixtures.filter(f => {
-        const d = new Date(f.date);
-        return d >= start && d < end;
+        const ukd = ukDate(f.date);
+        return ukd >= filterDate && ukd < endStr;
       });
     } else {
-      fixtures = fixtures.filter(f => f.date.slice(0, 10) === filterDate);
+      fixtures = fixtures.filter(f => ukDate(f.date) === filterDate);
     }
   }
   fixtures.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-  const dates = [...new Set(data.fixtures.map(f => f.date.slice(0, 10)))].sort();
+  const dates = [...new Set(data.fixtures.map(f => ukDate(f.date)))].sort();
 
   const monthLabels = {};
   for (const d of dates) {
     const m = d.slice(0, 7);
     if (!monthLabels[m]) {
-      const dt = new Date(m + '-01T12:00:00Z');
-      monthLabels[m] = dt.toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+      const dt = new Date(m + '-01T12:00:00+01:00');
+      monthLabels[m] = dt.toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'Europe/London' });
     }
   }
   const months = Object.keys(monthLabels).sort();
 
   const weekLabels = {};
   for (const d of dates) {
-    const dt = new Date(d + 'T12:00:00Z');
+    const dt = new Date(d + 'T12:00:00+01:00');
     const start = new Date(dt);
     start.setUTCDate(start.getUTCDate() - start.getUTCDay());
     const end = new Date(start);
     end.setUTCDate(end.getUTCDate() + 6);
-    const key = start.toISOString().slice(0, 10);
+    const key = start.toLocaleDateString('en-CA', { timeZone: 'Europe/London' });
     if (!weekLabels[key]) {
-      const s = start.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
-      const e = end.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+      const s = start.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'Europe/London' });
+      const e = end.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'Europe/London' });
       weekLabels[key] = `${s} – ${e}`;
     }
   }
@@ -157,8 +161,8 @@ export default function FixturesPage() {
       {viewMode !== 'all' && (
       <div style={{ marginBottom: 20, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         {viewMode === 'day' && dates.map(d => {
-          const dt = new Date(d + 'T12:00:00Z');
-          const label = dt.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+          const dt = new Date(d + 'T12:00:00+01:00');
+          const label = dt.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'Europe/London' });
           return (
             <button
               key={d}
@@ -179,17 +183,14 @@ export default function FixturesPage() {
         })}
         {viewMode === 'week' && weeks.map(w => {
           const isActive = filterDate && filterDate >= w && filterDate < (() => {
-            const end = new Date(w + 'T12:00:00Z');
+            const end = new Date(w + 'T12:00:00+01:00');
             end.setUTCDate(end.getUTCDate() + 7);
-            return end.toISOString().slice(0, 10);
+            return end.toLocaleDateString('en-CA', { timeZone: 'Europe/London' });
           })();
           return (
             <button
               key={w}
-              onClick={() => {
-                const start = new Date(w + 'T12:00:00Z');
-                setFilterDate(start.toISOString().slice(0, 10));
-              }}
+              onClick={() => setFilterDate(w)}
               style={{
                 padding: '6px 14px',
                 borderRadius: 20,
@@ -236,15 +237,15 @@ export default function FixturesPage() {
           (() => {
             const groups = {};
             for (const f of fixtures) {
-              const d = f.date.slice(0, 10);
+              const d = ukDate(f.date);
               if (!groups[d]) groups[d] = [];
               groups[d].push(f);
             }
             return Object.entries(groups).map(([dateStr, list]) => {
-              const dt = new Date(dateStr + 'T12:00:00Z');
+              const dt = new Date(dateStr + 'T12:00:00+01:00');
               const label = dt.toLocaleDateString('en-GB', {
                 weekday: 'short', day: 'numeric', month: 'long', year: 'numeric',
-                timeZone: 'UTC',
+                timeZone: 'Europe/London',
               });
               return (
                 <div key={dateStr}>

@@ -68,8 +68,8 @@ export default function MatchCard({ fixture, homeTeam, awayTeam, participants, t
   const awayLabel = awayTeam?.name || (fixture.away_team_id === null ? (feederLabel(fixture.away_placeholder, fixtureMap, roundPositions) || 'TBD') : '?');
 
   const date = new Date(fixture.date);
-  const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  const dateStr = date.toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' });
+  const timeStr = date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' });
+  const dateStr = date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Europe/London' });
 
   return (
     <div className="glass" style={{
