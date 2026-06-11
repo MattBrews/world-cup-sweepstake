@@ -18,8 +18,8 @@ export function runMigrations() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       sweepstake_id TEXT NOT NULL REFERENCES sweepstakes(id) ON DELETE CASCADE,
       name TEXT NOT NULL,
-      team_id INTEGER NOT NULL,
-      team_name TEXT NOT NULL
+      team_id INTEGER,
+      team_name TEXT
     );
 
     CREATE TABLE IF NOT EXISTS cached_teams (
@@ -96,9 +96,28 @@ export function runMigrations() {
 
   // Add prediction_token to participants if not exists
   try {
-    db.exec("ALTER TABLE participants ADD COLUMN prediction_token TEXT");
+    db.exec('ALTER TABLE participants ADD COLUMN prediction_token TEXT');
   } catch {
     // column already exists
+  }
+
+  // Make team_id / team_name nullable (for prediction mode)
+  const participantsInfo = db.prepare("PRAGMA table_info('participants')").all();
+  const teamIdCol = participantsInfo.find(c => c.name === 'team_id');
+  if (teamIdCol && teamIdCol.notnull === 1) {
+    db.exec(`
+      CREATE TABLE participants_new (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        sweepstake_id TEXT NOT NULL REFERENCES sweepstakes(id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        team_id INTEGER,
+        team_name TEXT,
+        prediction_token TEXT
+      )
+    `);
+    db.exec('INSERT INTO participants_new (id, sweepstake_id, name, team_id, team_name, prediction_token) SELECT id, sweepstake_id, name, team_id, team_name, prediction_token FROM participants');
+    db.exec('DROP TABLE participants');
+    db.exec('ALTER TABLE participants_new RENAME TO participants');
   }
 
   // Create predictions table

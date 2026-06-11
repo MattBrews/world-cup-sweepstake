@@ -61,7 +61,7 @@ function buildRoundPositions(allFixtures) {
   return pos;
 }
 
-export default function MatchCard({ fixture, homeTeam, awayTeam, participants, teams, allFixtures }) {
+export default function MatchCard({ fixture, homeTeam, awayTeam, participants, teams, allFixtures, predictionOverview }) {
   const homeParticipant = participants.find(p => p.team_id === fixture.home_team_id);
   const awayParticipant = participants.find(p => p.team_id === fixture.away_team_id);
   const isFinished = fixture.status === 'FT';
@@ -131,6 +131,30 @@ export default function MatchCard({ fixture, homeTeam, awayTeam, participants, t
           {awayTeam?.logo_url && <img src={awayTeam.logo_url} alt="" style={{ width: 18, height: 18, flexShrink: 0 }} />}
         </div>
       </div>
+
+      {predictionOverview && fixture.status === 'SCHEDULED' && (() => {
+        const ov = predictionOverview.fixtures?.find(o => o.id === fixture.id);
+        if (!ov) return null;
+        return (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, marginTop: 8 }}>
+            {ov.participant_predictions.map(p => (
+              <span
+                key={p.participant_id}
+                style={{
+                  fontSize: 10,
+                  fontWeight: 600,
+                  padding: '2px 6px',
+                  borderRadius: 10,
+                  background: p.predicted ? 'rgba(68,207,121,0.15)' : 'rgba(255,255,255,0.05)',
+                  color: p.predicted ? 'var(--token-7)' : 'var(--color-text-muted)',
+                }}
+              >
+                {p.participant_name}
+              </span>
+            ))}
+          </div>
+        );
+      })()}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link, useLocation } from 'react-router-dom';
-import { getDashboard } from '../api/client';
+import { useParams } from 'react-router-dom';
+import { getDashboard, getPredictionOverview } from '../api/client';
+import NavBar from '../components/ui/NavBar';
 import MatchCard from '../components/dashboard/MatchCard';
 
 function ukDate(isoStr) {
@@ -9,15 +10,20 @@ function ukDate(isoStr) {
 
 export default function FixturesPage() {
   const { publicId } = useParams();
-  const location = useLocation();
   const [data, setData] = useState(null);
   const [filterDate, setFilterDate] = useState('');
   const [viewMode, setViewMode] = useState('all');
   const [loading, setLoading] = useState(true);
+  const [predOverview, setPredOverview] = useState(null);
 
   useEffect(() => {
     getDashboard(publicId)
-      .then(d => setData(d))
+      .then(d => {
+        setData(d);
+        if (d.sweepstake?.mode === 'prediction') {
+          getPredictionOverview(publicId).then(ov => setPredOverview(ov)).catch(() => {});
+        }
+      })
       .catch(() => setData(null))
       .finally(() => setLoading(false));
   }, [publicId]);
@@ -81,6 +87,7 @@ export default function FixturesPage() {
       { label: 'Dashboard', path: `/sweepstake/${publicId}` },
       { label: 'Fixtures', path: `/sweepstake/${publicId}/fixtures` },
       { label: 'Predictions', path: `/sweepstake/${publicId}/predictions` },
+      { label: 'Leaderboard', path: `/sweepstake/${publicId}/leaderboard` },
       { label: 'Participants', path: `/sweepstake/${publicId}/participants` },
     ]
     : [
@@ -92,32 +99,7 @@ export default function FixturesPage() {
 
   return (
     <div style={{ maxWidth: 960, margin: '0 auto', padding: '24px 16px', overflowX: 'hidden' }}>
-      <div style={{ display: 'flex', gap: 4, marginBottom: 24 }}>
-        {navPages.map(p => {
-          const isActive = location.pathname === p.path;
-          return (
-            <Link
-              key={p.label}
-              to={p.path}
-              style={{
-                flex: 1,
-                padding: '8px 8px',
-                borderRadius: 20,
-                fontSize: 12,
-                fontWeight: 600,
-                textAlign: 'center',
-                background: isActive ? 'var(--gradient-accent)' : 'rgba(255,255,255,0.04)',
-                color: isActive ? '#fff' : 'var(--color-text)',
-                border: '1px solid rgba(255,255,255,0.06)',
-                textDecoration: 'none',
-                transition: 'all 0.2s',
-              }}
-            >
-              {p.label}
-            </Link>
-          );
-        })}
-      </div>
+      <NavBar navPages={navPages} />
 
       <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 20, color: 'var(--color-accent)' }}>
         Fixtures & Results
@@ -275,6 +257,7 @@ export default function FixturesPage() {
                         awayTeam={teamMap[f.away_team_id]}
                         participants={data.participants}
                         allFixtures={data.fixtures}
+                        predictionOverview={predOverview}
                       />
                     ))}
                   </div>

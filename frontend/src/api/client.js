@@ -105,6 +105,10 @@ export function getPredictionLeaderboard(ref) {
   return request(`/sweepstakes/${ref}/predictions/leaderboard`);
 }
 
+export function getPredictionOverview(ref) {
+  return request(`/sweepstakes/${ref}/predictions/overview`);
+}
+
 export function getParticipantToken(slug, id) {
   return request(`/sweepstakes/${slug}/participants/${id}/token`);
 }

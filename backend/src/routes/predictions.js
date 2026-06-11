@@ -105,4 +105,60 @@ router.get('/:ref/predictions/leaderboard', (req, res) => {
   res.json(leaderboard);
 });
 
+router.get('/:ref/predictions/overview', (req, res) => {
+  const db = getDb();
+  const sweep = lookupSweep(req.params.ref);
+  if (!sweep) return res.status(404).json({ error: 'Not found' });
+
+  const participants = db.prepare(
+    'SELECT id, name FROM participants WHERE sweepstake_id = ? ORDER BY name'
+  ).all(sweep.id);
+
+  const rows = db.prepare(`
+    SELECT
+      f.id as fixture_id, f.home_team_id, f.away_team_id,
+      f.home_placeholder, f.away_placeholder,
+      f.home_score, f.away_score, f.date, f.status, f.stage,
+      f.tv_channel, f.venue,
+      ht.name as home_team_name, ht.logo_url as home_logo,
+      at.name as away_team_name, at.logo_url as away_logo,
+      pp.id as participant_id, pp.name as participant_name,
+      CASE WHEN pr.id IS NOT NULL THEN 1 ELSE 0 END as predicted
+    FROM cached_fixtures f
+    LEFT JOIN cached_teams ht ON ht.id = f.home_team_id
+    LEFT JOIN cached_teams at ON at.id = f.away_team_id
+    CROSS JOIN participants pp
+    LEFT JOIN predictions pr ON pr.fixture_id = f.id AND pr.participant_id = pp.id
+    WHERE f.status = 'SCHEDULED' AND pp.sweepstake_id = ?
+    ORDER BY f.date, pp.name
+  `).all(sweep.id);
+
+  const fixtures = {};
+  for (const r of rows) {
+    if (!fixtures[r.fixture_id]) {
+      fixtures[r.fixture_id] = {
+        id: r.fixture_id,
+        home_team_id: r.home_team_id, away_team_id: r.away_team_id,
+        home_team_name: r.home_team_name, away_team_name: r.away_team_name,
+        home_placeholder: r.home_placeholder, away_placeholder: r.away_placeholder,
+        home_logo: r.home_logo, away_logo: r.away_logo,
+        home_score: r.home_score, away_score: r.away_score,
+        date: r.date, status: r.status, stage: r.stage,
+        tv_channel: r.tv_channel, venue: r.venue,
+        participant_predictions: [],
+      };
+    }
+    fixtures[r.fixture_id].participant_predictions.push({
+      participant_id: r.participant_id,
+      participant_name: r.participant_name,
+      predicted: !!r.predicted,
+    });
+  }
+
+  res.json({
+    participants,
+    fixtures: Object.values(fixtures),
+  });
+});
+
 export default router;

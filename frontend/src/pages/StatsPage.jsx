@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link, useLocation } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { getDashboard } from '../api/client';
+import NavBar from '../components/ui/NavBar';
 import Toggle from '../components/ui/Toggle';
 
 export default function StatsPage() {
   const { publicId } = useParams();
-  const location = useLocation();
   const [data, setData] = useState(null);
   const [view, setView] = useState('team');
   const [loading, setLoading] = useState(true);
@@ -97,6 +97,7 @@ export default function StatsPage() {
       { label: 'Dashboard', path: `/sweepstake/${publicId}` },
       { label: 'Fixtures', path: `/sweepstake/${publicId}/fixtures` },
       { label: 'Predictions', path: `/sweepstake/${publicId}/predictions` },
+      { label: 'Leaderboard', path: `/sweepstake/${publicId}/leaderboard` },
       { label: 'Participants', path: `/sweepstake/${publicId}/participants` },
     ]
     : [
@@ -108,32 +109,7 @@ export default function StatsPage() {
 
   return (
     <div style={{ maxWidth: 960, margin: '0 auto', padding: '24px 16px', overflowX: 'hidden' }}>
-      <div style={{ display: 'flex', gap: 4, marginBottom: 24 }}>
-        {navPages.map(p => {
-          const isActive = location.pathname === p.path;
-          return (
-            <Link
-              key={p.label}
-              to={p.path}
-              style={{
-                flex: 1,
-                padding: '8px 8px',
-                borderRadius: 20,
-                fontSize: 12,
-                fontWeight: 600,
-                textAlign: 'center',
-                background: isActive ? 'var(--gradient-accent)' : 'rgba(255,255,255,0.04)',
-                color: isActive ? '#fff' : 'var(--color-text)',
-                border: '1px solid rgba(255,255,255,0.06)',
-                textDecoration: 'none',
-                transition: 'all 0.2s',
-              }}
-            >
-              {p.label}
-            </Link>
-          );
-        })}
-      </div>
+      <NavBar navPages={navPages} />
 
       <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 20, color: 'var(--color-accent)' }}>
         Leaderboard
