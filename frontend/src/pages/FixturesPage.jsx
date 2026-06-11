@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { getDashboard, getPredictionOverview } from '../api/client';
+import { getDashboard } from '../api/client';
 import NavBar from '../components/ui/NavBar';
 import MatchCard from '../components/dashboard/MatchCard';
 
@@ -14,16 +14,10 @@ export default function FixturesPage() {
   const [filterDate, setFilterDate] = useState('');
   const [viewMode, setViewMode] = useState('all');
   const [loading, setLoading] = useState(true);
-  const [predOverview, setPredOverview] = useState(null);
 
   useEffect(() => {
     getDashboard(publicId)
-      .then(d => {
-        setData(d);
-        if (d.sweepstake?.mode === 'prediction') {
-          getPredictionOverview(publicId).then(ov => setPredOverview(ov)).catch(() => {});
-        }
-      })
+      .then(d => setData(d))
       .catch(() => setData(null))
       .finally(() => setLoading(false));
   }, [publicId]);
@@ -88,6 +82,7 @@ export default function FixturesPage() {
       { label: 'Fixtures', path: `/sweepstake/${publicId}/fixtures` },
       { label: 'Predictions', path: `/sweepstake/${publicId}/predictions` },
       { label: 'Leaderboard', path: `/sweepstake/${publicId}/leaderboard` },
+      { label: 'Standings', path: `/sweepstake/${publicId}/standings` },
       { label: 'Participants', path: `/sweepstake/${publicId}/participants` },
     ]
     : [
@@ -257,7 +252,6 @@ export default function FixturesPage() {
                         awayTeam={teamMap[f.away_team_id]}
                         participants={data.participants}
                         allFixtures={data.fixtures}
-                        predictionOverview={predOverview}
                       />
                     ))}
                   </div>

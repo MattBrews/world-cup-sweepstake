@@ -7,6 +7,7 @@ import StageNav from '../components/ui/StageNav';
 import GroupCard from '../components/dashboard/GroupCard';
 import MatchCard from '../components/dashboard/MatchCard';
 import BracketView from '../components/dashboard/BracketView';
+import PredictionFixtureCard from '../components/dashboard/PredictionFixtureCard';
 
 export default function DashboardPage() {
   const { publicId } = useParams();
@@ -68,6 +69,7 @@ export default function DashboardPage() {
       { label: 'Fixtures', path: `/sweepstake/${publicId}/fixtures` },
       { label: 'Predictions', path: `/sweepstake/${publicId}/predictions` },
       { label: 'Leaderboard', path: `/sweepstake/${publicId}/leaderboard` },
+      { label: 'Standings', path: `/sweepstake/${publicId}/standings` },
       { label: 'Participants', path: `/sweepstake/${publicId}/participants` },
     ]
     : [
@@ -114,7 +116,6 @@ export default function DashboardPage() {
                   participants={data.participants}
                   teams={data.teams}
                   allFixtures={data.fixtures}
-                  predictionOverview={predOverview}
                 />
               </div>
             ))}
@@ -124,46 +125,80 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div style={{ marginBottom: 16 }}>
-        <StageNav
-          current={data.currentStage}
-          activeStage={activeStage}
-          onSelect={setActiveStage}
-        />
-      </div>
-
-      <div style={{ marginBottom: 20 }}>
-        <ProgressBar
-          current={stageCompleted}
-          total={stageTotal}
-          statusText={activeStage}
-        />
-      </div>
-
-      {isKnockout ? (
-        <BracketView
-          fixtures={stageFixtures}
-          allFixtures={data.fixtures}
-          teams={data.teams}
-          participants={data.participants}
-        />
-      ) : (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-          gap: 16,
-        }}>
-          {groupLetters.map((letter, i) => (
-            <GroupCard
-              key={letter}
-              groupLetter={letter}
-              standings={groupedStandings[letter]}
-              participants={data.participants}
-              teamMap={teamMap}
-              tokenIndex={i}
+      {isPredictionMode && predOverview ? (
+        <>
+          <div style={{ marginBottom: 16 }}>
+            <StageNav
+              current={data.currentStage}
+              activeStage={activeStage}
+              onSelect={setActiveStage}
+              stages={[...new Set(predOverview.fixtures.map(f => f.stage))].sort((a, b) => {
+                const stageOrder = ['Group Stage', 'Round of 32', 'Round of 16', 'Quarter-finals', 'Semi-finals', '3rd Place', 'Final'];
+                return stageOrder.indexOf(a) - stageOrder.indexOf(b);
+              })}
             />
-          ))}
+          </div>
+
+          {(() => {
+            const stageFixtures = predOverview.fixtures.filter(f => f.stage === activeStage);
+
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {stageFixtures.map(f => (
+                  <PredictionFixtureCard key={f.id} fixture={f} allFixtures={data.fixtures} />
+                ))}
+              </div>
+            );
+          })()}
+        </>
+      ) : isPredictionMode ? (
+        <div className="glass" style={{ textAlign: 'center', padding: 40, color: 'var(--color-text-muted)' }}>
+          Loading predictions...
         </div>
+      ) : (
+        <>
+          <div style={{ marginBottom: 16 }}>
+            <StageNav
+              current={data.currentStage}
+              activeStage={activeStage}
+              onSelect={setActiveStage}
+            />
+          </div>
+
+          <div style={{ marginBottom: 20 }}>
+            <ProgressBar
+              current={stageCompleted}
+              total={stageTotal}
+              statusText={activeStage}
+            />
+          </div>
+
+          {isKnockout ? (
+            <BracketView
+              fixtures={stageFixtures}
+              allFixtures={data.fixtures}
+              teams={data.teams}
+              participants={data.participants}
+            />
+          ) : (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+              gap: 16,
+            }}>
+              {groupLetters.map((letter, i) => (
+                <GroupCard
+                  key={letter}
+                  groupLetter={letter}
+                  standings={groupedStandings[letter]}
+                  participants={data.participants}
+                  teamMap={teamMap}
+                  tokenIndex={i}
+                />
+              ))}
+            </div>
+          )}
+        </>
       )}
     </div>
   );

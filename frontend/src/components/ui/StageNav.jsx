@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 
 const STAGES = ['Group Stage', 'Round of 32', 'Round of 16', 'Quarter-finals', 'Semi-finals', '3rd Place', 'Final'];
 
-export default function StageNav({ current, activeStage, onSelect }) {
+export default function StageNav({ current, activeStage, onSelect, stages }) {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 600);
+  const displayStages = stages || STAGES;
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 600);
@@ -28,7 +29,7 @@ export default function StageNav({ current, activeStage, onSelect }) {
           outline: 'none',
         }}
       >
-        {STAGES.map(stage => (
+        {displayStages.map(stage => (
           <option key={stage} value={stage} style={{ background: '#0b111e' }}>
             {stage}
           </option>
@@ -37,7 +38,7 @@ export default function StageNav({ current, activeStage, onSelect }) {
     );
   }
 
-  const currentIdx = STAGES.indexOf(activeStage || current);
+  const currentIdx = displayStages.indexOf(activeStage || current);
 
   return (
     <div style={{
@@ -46,7 +47,7 @@ export default function StageNav({ current, activeStage, onSelect }) {
       overflowX: 'auto',
       paddingBottom: 4,
     }}>
-      {STAGES.map((stage, i) => {
+      {displayStages.map((stage, i) => {
         const isActive = stage === activeStage;
         const isPast = currentIdx !== -1 && i < currentIdx;
         const isCurrent = stage === current;

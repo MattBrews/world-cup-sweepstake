@@ -1,16 +1,4 @@
-const SHORT_ROUNDS = {
-  'Group Stage': 'GS',
-  'Round of 32': 'R32',
-  'Round of 16': 'R16',
-  'Quarter-finals': 'QF',
-  'Semi-finals': 'SF',
-  '3rd Place': '3rd',
-  'Final': 'Final',
-};
-
-function shortRound(key) {
-  return SHORT_ROUNDS[key] || key;
-}
+import { feederLabel, buildRoundPositions } from '../../utils/fixtureLabels';
 
 function tvLabel(channel) {
   if (!channel) return '';
@@ -19,49 +7,7 @@ function tvLabel(channel) {
   return channel;
 }
 
-function feederLabel(label, fixtureMap, roundPositions) {
-  if (!label || label === 'null') return null;
-  if (typeof label !== 'string') return null;
-  if (label.startsWith('W')) {
-    const fid = parseInt(label.slice(1));
-    const feeder = fixtureMap[fid];
-    if (feeder) {
-      const pos = roundPositions[fid] || '?';
-      return `Winner of ${shortRound(feeder.stage)} #${pos}`;
-    }
-  }
-  if (label.startsWith('L')) {
-    const fid = parseInt(label.slice(1));
-    const feeder = fixtureMap[fid];
-    if (feeder) {
-      const pos = roundPositions[fid] || '?';
-      return `Loser of ${shortRound(feeder.stage)} #${pos}`;
-    }
-  }
-  if (/^\d[A-Z]$/.test(label)) {
-    const pos = label[0] === '1' ? 'Winner' : 'Runner-up';
-    return `Group ${label[1]} ${pos}`;
-  }
-  const m = label.match(/^(\d)([A-Z])\/([A-Z/]+)$/);
-  if (m) return `Best 3rd (${m[2]}/${m[3]})`;
-  return label;
-}
-
-function buildRoundPositions(allFixtures) {
-  const byStage = {};
-  for (const f of allFixtures) {
-    if (!byStage[f.stage]) byStage[f.stage] = [];
-    byStage[f.stage].push(f);
-  }
-  const pos = {};
-  for (const stage of Object.keys(byStage)) {
-    const sorted = byStage[stage].sort((a, b) => new Date(a.date) - new Date(b.date));
-    sorted.forEach((f, i) => { pos[f.id] = i + 1; });
-  }
-  return pos;
-}
-
-export default function MatchCard({ fixture, homeTeam, awayTeam, participants, teams, allFixtures, predictionOverview }) {
+export default function MatchCard({ fixture, homeTeam, awayTeam, participants, teams, allFixtures }) {
   const homeParticipant = participants.find(p => p.team_id === fixture.home_team_id);
   const awayParticipant = participants.find(p => p.team_id === fixture.away_team_id);
   const isFinished = fixture.status === 'FT';
@@ -131,30 +77,6 @@ export default function MatchCard({ fixture, homeTeam, awayTeam, participants, t
           {awayTeam?.logo_url && <img src={awayTeam.logo_url} alt="" style={{ width: 18, height: 18, flexShrink: 0 }} />}
         </div>
       </div>
-
-      {predictionOverview && fixture.status === 'SCHEDULED' && (() => {
-        const ov = predictionOverview.fixtures?.find(o => o.id === fixture.id);
-        if (!ov) return null;
-        return (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, marginTop: 8 }}>
-            {ov.participant_predictions.map(p => (
-              <span
-                key={p.participant_id}
-                style={{
-                  fontSize: 10,
-                  fontWeight: 600,
-                  padding: '2px 6px',
-                  borderRadius: 10,
-                  background: p.predicted ? 'rgba(68,207,121,0.15)' : 'rgba(255,255,255,0.05)',
-                  color: p.predicted ? 'var(--token-7)' : 'var(--color-text-muted)',
-                }}
-              >
-                {p.participant_name}
-              </span>
-            ))}
-          </div>
-        );
-      })()}
     </div>
   );
 }

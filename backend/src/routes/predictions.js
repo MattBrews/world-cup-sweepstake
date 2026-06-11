@@ -122,14 +122,15 @@ router.get('/:ref/predictions/overview', (req, res) => {
       f.tv_channel, f.venue,
       ht.name as home_team_name, ht.logo_url as home_logo,
       at.name as away_team_name, at.logo_url as away_logo,
+      ht.group_letter as home_group_letter,
       pp.id as participant_id, pp.name as participant_name,
-      CASE WHEN pr.id IS NOT NULL THEN 1 ELSE 0 END as predicted
+      pr.home_score as predicted_home, pr.away_score as predicted_away
     FROM cached_fixtures f
     LEFT JOIN cached_teams ht ON ht.id = f.home_team_id
     LEFT JOIN cached_teams at ON at.id = f.away_team_id
     CROSS JOIN participants pp
     LEFT JOIN predictions pr ON pr.fixture_id = f.id AND pr.participant_id = pp.id
-    WHERE f.status = 'SCHEDULED' AND pp.sweepstake_id = ?
+    WHERE pp.sweepstake_id = ?
     ORDER BY f.date, pp.name
   `).all(sweep.id);
 
@@ -145,19 +146,21 @@ router.get('/:ref/predictions/overview', (req, res) => {
         home_score: r.home_score, away_score: r.away_score,
         date: r.date, status: r.status, stage: r.stage,
         tv_channel: r.tv_channel, venue: r.venue,
+        group_letter: r.home_group_letter,
         participant_predictions: [],
       };
     }
     fixtures[r.fixture_id].participant_predictions.push({
       participant_id: r.participant_id,
       participant_name: r.participant_name,
-      predicted: !!r.predicted,
+      predicted_home: r.predicted_home,
+      predicted_away: r.predicted_away,
     });
   }
 
   res.json({
     participants,
-    fixtures: Object.values(fixtures),
+    fixtures: Object.values(fixtures).sort((a, b) => new Date(a.date) - new Date(b.date)),
   });
 });
 

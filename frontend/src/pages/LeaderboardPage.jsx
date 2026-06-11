@@ -20,6 +20,7 @@ export default function LeaderboardPage() {
     { label: 'Fixtures', path: `/sweepstake/${publicId}/fixtures` },
     { label: 'Predictions', path: `/sweepstake/${publicId}/predictions` },
     { label: 'Leaderboard', path: `/sweepstake/${publicId}/leaderboard` },
+    { label: 'Standings', path: `/sweepstake/${publicId}/standings` },
     { label: 'Participants', path: `/sweepstake/${publicId}/participants` },
   ];
 
