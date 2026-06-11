@@ -12,6 +12,13 @@ function shortRound(key) {
   return SHORT_ROUNDS[key] || key;
 }
 
+function tvLabel(channel) {
+  if (!channel) return '';
+  if (/^BBC/i.test(channel)) return 'BBC';
+  if (/^ITV/i.test(channel)) return 'ITV';
+  return channel;
+}
+
 function feederLabel(label, fixtureMap, roundPositions) {
   if (!label || label === 'null') return null;
   if (typeof label !== 'string') return null;
@@ -77,12 +84,7 @@ export default function MatchCard({ fixture, homeTeam, awayTeam, participants, t
       borderLeft: `3px solid ${isLive ? 'var(--color-accent)' : isFinished ? 'var(--token-7)' : 'rgba(255,255,255,0.1)'}`,
     }}>
       <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginBottom: 6 }}>
-        {isLive ? '🔴 LIVE' : `${dateStr} · ${timeStr}`}
-        {fixture.round && <span style={{ marginLeft: 8 }}>{fixture.round}</span>}
-        <span style={{ marginLeft: 8 }}>
-          {fixture.tv_channel || ''}
-          {fixture.venue ? (fixture.tv_channel ? ` · ${fixture.venue}` : fixture.venue) : ''}
-        </span>
+        {[isLive ? '🔴 LIVE' : `${dateStr} ${timeStr}`, fixture.round, tvLabel(fixture.tv_channel), fixture.venue].filter(Boolean).join('  ·  ')}
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
