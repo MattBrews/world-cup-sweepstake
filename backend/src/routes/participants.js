@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import { Router } from 'express';
 import { getDb } from '../db/connection.js';
 import { requireAdmin } from '../middleware/auth.js';
@@ -33,8 +34,8 @@ router.get('/:ref/participants', (req, res) => {
 
 router.post('/:slug/participants', requireAdmin, (req, res) => {
   const { name, teamId, teamName } = req.body;
-  if (!name || !teamId || !teamName) {
-    return res.status(400).json({ error: 'Name, teamId, and teamName required' });
+  if (!name) {
+    return res.status(400).json({ error: 'Name required' });
   }
 
   if (!canManageSlug(req, req.params.slug)) {
@@ -42,21 +43,74 @@ router.post('/:slug/participants', requireAdmin, (req, res) => {
   }
 
   const db = getDb();
-  const sweep = db.prepare('SELECT id, slug FROM sweepstakes WHERE slug = ?').get(req.params.slug);
+  const sweep = db.prepare('SELECT id, slug, mode FROM sweepstakes WHERE slug = ?').get(req.params.slug);
   if (!sweep) return res.status(404).json({ error: 'Not found' });
 
-  const existing = db.prepare(
-    'SELECT id FROM participants WHERE sweepstake_id = ? AND team_id = ?'
-  ).get(sweep.id, teamId);
-  if (existing) {
-    return res.status(409).json({ error: 'Team already assigned in this sweepstake' });
+  if (sweep.mode === 'classic') {
+    if (!teamId || !teamName) {
+      return res.status(400).json({ error: 'teamId and teamName required for classic sweepstakes' });
+    }
+    const existing = db.prepare(
+      'SELECT id FROM participants WHERE sweepstake_id = ? AND team_id = ?'
+    ).get(sweep.id, teamId);
+    if (existing) {
+      return res.status(409).json({ error: 'Team already assigned in this sweepstake' });
+    }
   }
 
+  const predictionToken = randomBytes(6).toString('hex');
   const result = db.prepare(
-    'INSERT INTO participants (sweepstake_id, name, team_id, team_name) VALUES (?, ?, ?, ?)'
-  ).run(sweep.id, name, teamId, teamName);
+    'INSERT INTO participants (sweepstake_id, name, team_id, team_name, prediction_token) VALUES (?, ?, ?, ?, ?)'
+  ).run(sweep.id, name, teamId || null, teamName || null, predictionToken);
 
-  res.status(201).json({ id: result.lastInsertRowid, name, team_id: teamId, team_name: teamName });
+  res.status(201).json({
+    id: result.lastInsertRowid,
+    name,
+    team_id: teamId || null,
+    team_name: teamName || null,
+    prediction_token: predictionToken,
+  });
+});
+
+router.get('/:slug/admin/participants', requireAdmin, (req, res) => {
+  if (!canManageSlug(req, req.params.slug)) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+
+  const db = getDb();
+  const sweep = db.prepare('SELECT id, public_id, mode FROM sweepstakes WHERE slug = ?').get(req.params.slug);
+  if (!sweep) return res.status(404).json({ error: 'Not found' });
+
+  const list = db.prepare(
+    'SELECT id, name, team_id, team_name, prediction_token FROM participants WHERE sweepstake_id = ? ORDER BY name'
+  ).all(sweep.id);
+
+  const enriched = list.map(p => ({
+    ...p,
+    link: p.prediction_token ? `/sweepstake/${sweep.public_id}/predictions?token=${p.prediction_token}` : null,
+  }));
+
+  res.json(enriched);
+});
+
+router.get('/:slug/participants/:id/token', requireAdmin, (req, res) => {
+  if (!canManageSlug(req, req.params.slug)) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+
+  const db = getDb();
+  const sweep = db.prepare('SELECT id, public_id, mode FROM sweepstakes WHERE slug = ?').get(req.params.slug);
+  if (!sweep) return res.status(404).json({ error: 'Not found' });
+
+  const participant = db.prepare(
+    'SELECT id, name, prediction_token FROM participants WHERE id = ? AND sweepstake_id = ?'
+  ).get(req.params.id, sweep.id);
+  if (!participant) return res.status(404).json({ error: 'Participant not found' });
+
+  res.json({
+    ...participant,
+    link: `/sweepstake/${sweep.public_id}/predictions?token=${participant.prediction_token}`,
+  });
 });
 
 router.delete('/:slug/participants/:id', requireAdmin, (req, res) => {

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
-import { getDashboard } from '../api/client';
+import { getDashboard, getPredictionLeaderboard } from '../api/client';
 import ProgressBar from '../components/ui/ProgressBar';
 import StageNav from '../components/ui/StageNav';
 import GroupCard from '../components/dashboard/GroupCard';
@@ -14,12 +14,18 @@ export default function DashboardPage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeStage, setActiveStage] = useState(null);
+  const [predLeaderboard, setPredLeaderboard] = useState([]);
+
+  const isPredictionMode = data?.sweepstake?.mode === 'prediction';
 
   useEffect(() => {
     getDashboard(publicId)
       .then(d => {
         setData(d);
         setActiveStage(d.currentStage);
+        if (d.sweepstake?.mode === 'prediction') {
+          getPredictionLeaderboard(publicId).then(lb => setPredLeaderboard(lb)).catch(() => {});
+        }
       })
       .catch(() => setData(null))
       .finally(() => setLoading(false));
@@ -56,12 +62,19 @@ export default function DashboardPage() {
   }
   const groupLetters = Object.keys(groupedStandings).sort();
 
-  const navPages = [
-    { label: 'Dashboard', path: `/sweepstake/${publicId}` },
-    { label: 'Fixtures', path: `/sweepstake/${publicId}/fixtures` },
-    { label: 'Leaderboard', path: `/sweepstake/${publicId}/stats` },
-    { label: 'Participants', path: `/sweepstake/${publicId}/participants` },
-  ];
+  const navPages = isPredictionMode
+    ? [
+      { label: 'Dashboard', path: `/sweepstake/${publicId}` },
+      { label: 'Fixtures', path: `/sweepstake/${publicId}/fixtures` },
+      { label: 'Predictions', path: `/sweepstake/${publicId}/predictions` },
+      { label: 'Participants', path: `/sweepstake/${publicId}/participants` },
+    ]
+    : [
+      { label: 'Dashboard', path: `/sweepstake/${publicId}` },
+      { label: 'Fixtures', path: `/sweepstake/${publicId}/fixtures` },
+      { label: 'Leaderboard', path: `/sweepstake/${publicId}/stats` },
+      { label: 'Participants', path: `/sweepstake/${publicId}/participants` },
+    ];
 
   return (
     <div style={{ maxWidth: 960, margin: '0 auto', padding: '24px 16px', overflowX: 'hidden' }}>
@@ -150,7 +163,57 @@ export default function DashboardPage() {
         />
       </div>
 
-      {isKnockout ? (
+      {isPredictionMode ? (
+        <div>
+          <h3 style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-text-muted)', marginBottom: 12 }}>
+            Prediction Leaderboard
+          </h3>
+          {predLeaderboard.length === 0 ? (
+            <div className="glass" style={{ textAlign: 'center', padding: 32, color: 'var(--color-text-muted)' }}>
+              No predictions submitted yet.
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {predLeaderboard.map((p, i) => (
+                <div key={p.id} className="glass" style={{
+                  padding: '12px 16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                }}>
+                  <div style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 800,
+                    fontSize: 12,
+                    background: 'rgba(255,255,255,0.06)',
+                    flexShrink: 0,
+                  }}>
+                    {i + 1}
+                  </div>
+                  <div style={{ flex: 1, fontWeight: 600, fontSize: 14 }}>{p.name}</div>
+                  <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--color-accent)' }}>{p.total_points}</div>
+                </div>
+              ))}
+              <Link
+                to={`/sweepstake/${publicId}/predictions`}
+                style={{
+                  textAlign: 'center',
+                  fontSize: 13,
+                  color: 'var(--color-accent)',
+                  marginTop: 4,
+                }}
+              >
+                View full leaderboard →
+              </Link>
+            </div>
+          )}
+        </div>
+      ) : isKnockout ? (
         <BracketView
           fixtures={stageFixtures}
           allFixtures={data.fixtures}

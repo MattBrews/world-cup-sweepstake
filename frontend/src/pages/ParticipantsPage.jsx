@@ -25,18 +25,27 @@ export default function ParticipantsPage() {
   const teamMap = {};
   for (const t of data.teams) teamMap[t.id] = t;
 
+  const isPredictionMode = data.sweepstake?.mode === 'prediction';
+
   const grouped = {};
   for (const p of participantList) {
     if (!grouped[p.name]) grouped[p.name] = [];
     grouped[p.name].push(p);
   }
 
-  const navPages = [
-    { label: 'Dashboard', path: `/sweepstake/${publicId}` },
-    { label: 'Fixtures', path: `/sweepstake/${publicId}/fixtures` },
-    { label: 'Leaderboard', path: `/sweepstake/${publicId}/stats` },
-    { label: 'Participants', path: `/sweepstake/${publicId}/participants` },
-  ];
+  const navPages = isPredictionMode
+    ? [
+      { label: 'Dashboard', path: `/sweepstake/${publicId}` },
+      { label: 'Fixtures', path: `/sweepstake/${publicId}/fixtures` },
+      { label: 'Predictions', path: `/sweepstake/${publicId}/predictions` },
+      { label: 'Participants', path: `/sweepstake/${publicId}/participants` },
+    ]
+    : [
+      { label: 'Dashboard', path: `/sweepstake/${publicId}` },
+      { label: 'Fixtures', path: `/sweepstake/${publicId}/fixtures` },
+      { label: 'Leaderboard', path: `/sweepstake/${publicId}/stats` },
+      { label: 'Participants', path: `/sweepstake/${publicId}/participants` },
+    ];
 
   return (
     <div style={{ maxWidth: 960, margin: '0 auto', padding: '24px 16px', overflowX: 'hidden' }}>

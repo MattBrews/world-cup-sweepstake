@@ -5,8 +5,8 @@ const router = Router();
 
 function lookupSweep(ref) {
   const db = getDb();
-  let s = db.prepare('SELECT id, name, slug, public_id FROM sweepstakes WHERE public_id = ?').get(ref);
-  if (!s) s = db.prepare('SELECT id, name, slug, public_id FROM sweepstakes WHERE slug = ?').get(ref);
+  let s = db.prepare('SELECT id, name, slug, public_id, mode FROM sweepstakes WHERE public_id = ?').get(ref);
+  if (!s) s = db.prepare('SELECT id, name, slug, public_id, mode FROM sweepstakes WHERE slug = ?').get(ref);
   return s;
 }
 

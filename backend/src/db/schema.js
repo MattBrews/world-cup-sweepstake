@@ -87,6 +87,35 @@ export function runMigrations() {
     // column already exists
   }
 
+  // Add mode column to sweepstakes if not exists
+  try {
+    db.exec("ALTER TABLE sweepstakes ADD COLUMN mode TEXT NOT NULL DEFAULT 'classic'");
+  } catch {
+    // column already exists
+  }
+
+  // Add prediction_token to participants if not exists
+  try {
+    db.exec("ALTER TABLE participants ADD COLUMN prediction_token TEXT");
+  } catch {
+    // column already exists
+  }
+
+  // Create predictions table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS predictions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      fixture_id INTEGER NOT NULL,
+      participant_id INTEGER NOT NULL REFERENCES participants(id) ON DELETE CASCADE,
+      home_score INTEGER NOT NULL,
+      away_score INTEGER NOT NULL,
+      points INTEGER,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      UNIQUE(fixture_id, participant_id)
+    );
+  `);
+
   const missing = db.prepare('SELECT id FROM sweepstakes WHERE public_id IS NULL').all();
   const update = db.prepare('UPDATE sweepstakes SET public_id = ? WHERE id = ?');
   for (const row of missing) {

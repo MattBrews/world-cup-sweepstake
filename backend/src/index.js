@@ -14,6 +14,7 @@ import sweepstakesRoutes from './routes/sweepstakes.js';
 import participantsRoutes from './routes/participants.js';
 import dashboardRoutes from './routes/dashboard.js';
 import configRoutes from './routes/config.js';
+import predictionsRoutes from './routes/predictions.js';
 
 const app = express();
 
@@ -36,6 +37,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/sweepstakes', sweepstakesRoutes);
 app.use('/api/sweepstakes', participantsRoutes);
 app.use('/api/sweepstakes', dashboardRoutes);
+app.use('/api/sweepstakes', predictionsRoutes);
 app.use('/api', configRoutes);
 
 app.post('/api/sync', async (req, res) => {

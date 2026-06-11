@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import Database from 'better-sqlite3';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -24,13 +25,14 @@ const people = ['Alice', 'Bob', 'Charlie', 'Diana', 'Eve', 'Frank'];
 db.prepare('DELETE FROM participants WHERE sweepstake_id = ?').run(sweep.id);
 
 const insert = db.prepare(
-  'INSERT INTO participants (sweepstake_id, name, team_id, team_name) VALUES (?, ?, ?, ?)'
+  'INSERT INTO participants (sweepstake_id, name, team_id, team_name, prediction_token) VALUES (?, ?, ?, ?, ?)'
 );
 
 const insertMany = db.transaction((teams) => {
   for (let i = 0; i < teams.length; i++) {
     const person = people[i % people.length];
-    insert.run(sweep.id, person, teams[i].id, teams[i].name);
+    const token = randomBytes(6).toString('hex');
+    insert.run(sweep.id, person, teams[i].id, teams[i].name, token);
   }
 });
 

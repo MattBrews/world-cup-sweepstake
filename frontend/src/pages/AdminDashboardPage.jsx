@@ -7,7 +7,7 @@ export default function AdminDashboardPage() {
   const [sweepstakes, setSweepstakes] = useState([]);
   const [session, setSession] = useState(null);
   const [showCreate, setShowCreate] = useState(false);
-  const [createForm, setCreateForm] = useState({ name: '', slug: '', adminPassword: '' });
+  const [createForm, setCreateForm] = useState({ name: '', slug: '', adminPassword: '', mode: 'classic' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -30,9 +30,9 @@ export default function AdminDashboardPage() {
     e.preventDefault();
     setError('');
     try {
-      await createSweepstake(createForm.name, createForm.slug, createForm.adminPassword || undefined);
+      await createSweepstake(createForm.name, createForm.slug, createForm.adminPassword || undefined, createForm.mode);
       setShowCreate(false);
-      setCreateForm({ name: '', slug: '', adminPassword: '' });
+      setCreateForm({ name: '', slug: '', adminPassword: '', mode: 'classic' });
       const list = await getSweepstakes();
       setSweepstakes(list);
     } catch (err) {
@@ -135,6 +135,52 @@ export default function AdminDashboardPage() {
               outline: 'none',
             }}
           />
+          <div style={{ display: 'flex', gap: 8 }}>
+            <label style={{
+              flex: 1,
+              padding: '10px 14px',
+              borderRadius: 8,
+              border: `1px solid ${createForm.mode === 'classic' ? 'var(--color-accent)' : 'rgba(255,255,255,0.08)'}`,
+              background: createForm.mode === 'classic' ? 'rgba(68,207,121,0.1)' : 'rgba(255,255,255,0.04)',
+              color: '#fff',
+              fontSize: 14,
+              cursor: 'pointer',
+              textAlign: 'center',
+              fontWeight: 600,
+            }}>
+              <input
+                type="radio"
+                name="mode"
+                value="classic"
+                checked={createForm.mode === 'classic'}
+                onChange={e => setCreateForm(f => ({ ...f, mode: e.target.value }))}
+                style={{ display: 'none' }}
+              />
+              🏆 Classic
+            </label>
+            <label style={{
+              flex: 1,
+              padding: '10px 14px',
+              borderRadius: 8,
+              border: `1px solid ${createForm.mode === 'prediction' ? 'var(--color-accent)' : 'rgba(255,255,255,0.08)'}`,
+              background: createForm.mode === 'prediction' ? 'rgba(68,207,121,0.1)' : 'rgba(255,255,255,0.04)',
+              color: '#fff',
+              fontSize: 14,
+              cursor: 'pointer',
+              textAlign: 'center',
+              fontWeight: 600,
+            }}>
+              <input
+                type="radio"
+                name="mode"
+                value="prediction"
+                checked={createForm.mode === 'prediction'}
+                onChange={e => setCreateForm(f => ({ ...f, mode: e.target.value }))}
+                style={{ display: 'none' }}
+              />
+              🔮 Prediction
+            </label>
+          </div>
           <input
             placeholder="Admin password (optional — for sweepstake-specific admin)"
             type="password"
@@ -174,7 +220,20 @@ export default function AdminDashboardPage() {
           }}>
             <Link to={`/admin/${s.slug}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flex: 1, textDecoration: 'none' }}>
               <div>
-                <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--color-text)' }}>{s.name}</div>
+                <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--color-text)' }}>
+                  {s.name}
+                  <span style={{
+                    marginLeft: 8,
+                    fontSize: 11,
+                    fontWeight: 600,
+                    padding: '2px 8px',
+                    borderRadius: 10,
+                    background: s.mode === 'prediction' ? 'rgba(99,102,241,0.2)' : 'rgba(68,207,121,0.15)',
+                    color: s.mode === 'prediction' ? '#818cf8' : 'var(--token-7)',
+                  }}>
+                    {s.mode === 'prediction' ? 'Prediction' : 'Classic'}
+                  </span>
+                </div>
                 <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>/sweepstake/{s.slug}</div>
               </div>
               <span style={{ color: 'var(--color-accent)' }}>→</span>

@@ -91,12 +91,20 @@ export default function StatsPage() {
       .sort((a, b) => b.points - a.points || b.goalDiff - a.goalDiff);
   }
 
-  const navPages = [
-    { label: 'Dashboard', path: `/sweepstake/${publicId}` },
-    { label: 'Fixtures', path: `/sweepstake/${publicId}/fixtures` },
-    { label: 'Leaderboard', path: `/sweepstake/${publicId}/stats` },
-    { label: 'Participants', path: `/sweepstake/${publicId}/participants` },
-  ];
+  const isPredictionMode = data.sweepstake?.mode === 'prediction';
+  const navPages = isPredictionMode
+    ? [
+      { label: 'Dashboard', path: `/sweepstake/${publicId}` },
+      { label: 'Fixtures', path: `/sweepstake/${publicId}/fixtures` },
+      { label: 'Predictions', path: `/sweepstake/${publicId}/predictions` },
+      { label: 'Participants', path: `/sweepstake/${publicId}/participants` },
+    ]
+    : [
+      { label: 'Dashboard', path: `/sweepstake/${publicId}` },
+      { label: 'Fixtures', path: `/sweepstake/${publicId}/fixtures` },
+      { label: 'Leaderboard', path: `/sweepstake/${publicId}/stats` },
+      { label: 'Participants', path: `/sweepstake/${publicId}/participants` },
+    ];
 
   return (
     <div style={{ maxWidth: 960, margin: '0 auto', padding: '24px 16px', overflowX: 'hidden' }}>

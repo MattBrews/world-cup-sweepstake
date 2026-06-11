@@ -10,7 +10,7 @@ const router = Router();
 router.get('/', (req, res) => {
   const db = getDb();
   const list = db.prepare(
-    'SELECT id, name, slug, public_id, created_at FROM sweepstakes ORDER BY created_at DESC'
+    'SELECT id, name, slug, public_id, created_at, mode FROM sweepstakes ORDER BY created_at DESC'
   ).all();
   res.json(list);
 });
@@ -25,10 +25,12 @@ router.get('/:ref', (req, res) => {
 });
 
 router.post('/', requireMasterAdmin, (req, res) => {
-  const { name, slug, adminPassword } = req.body;
+  const { name, slug, adminPassword, mode } = req.body;
   if (!name || !slug) {
     return res.status(400).json({ error: 'Name and slug required' });
   }
+
+  const validMode = mode === 'prediction' ? 'prediction' : 'classic';
 
   const db = getDb();
   const existing = db.prepare('SELECT id FROM sweepstakes WHERE slug = ?').get(slug);
@@ -41,10 +43,10 @@ router.post('/', requireMasterAdmin, (req, res) => {
   const adminHash = adminPassword ? bcrypt.hashSync(adminPassword, 10) : null;
 
   db.prepare(
-    'INSERT INTO sweepstakes (id, name, slug, public_id, admin_password) VALUES (?, ?, ?, ?, ?)'
-  ).run(id, name, slug, publicId, adminHash);
+    'INSERT INTO sweepstakes (id, name, slug, public_id, admin_password, mode) VALUES (?, ?, ?, ?, ?, ?)'
+  ).run(id, name, slug, publicId, adminHash, validMode);
 
-  res.status(201).json({ id, name, slug, public_id: publicId });
+  res.status(201).json({ id, name, slug, public_id: publicId, mode: validMode });
 });
 
 router.put('/:slug', requireSweepstakeOrMasterAdmin, (req, res) => {

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { getDashboard, getParticipants, addParticipant, removeParticipant, getSession, logout, updateSweepstake } from '../api/client';
+import { getDashboard, getAdminParticipants, addParticipant, removeParticipant, getSession, logout, updateSweepstake } from '../api/client';
 
 export default function AdminManagePage() {
   const { slug } = useParams();
@@ -25,7 +25,7 @@ export default function AdminManagePage() {
           return;
         }
         setSession(s);
-        return Promise.all([getDashboard(slug), getParticipants(slug)]);
+        return Promise.all([getDashboard(slug), getAdminParticipants(slug)]);
       })
       .then(([d, p]) => {
         setData(d);
@@ -41,13 +41,21 @@ export default function AdminManagePage() {
     ? data.teams.filter(t => !participants.some(p => p.team_id === t.id))
     : [];
 
+  const isPredictionMode = data.sweepstake?.mode === 'prediction';
+
   const handleAdd = async (e) => {
     e.preventDefault();
-    if (!newName || !selectedTeam) return;
+    if (!newName) return;
+    if (!isPredictionMode && !selectedTeam) return;
     setError('');
     try {
-      const team = data.teams.find(t => t.id === parseInt(selectedTeam));
-      const result = await addParticipant(slug, newName, team.id, team.name);
+      let result;
+      if (isPredictionMode) {
+        result = await addParticipant(slug, newName, null, null);
+      } else {
+        const team = data.teams.find(t => t.id === parseInt(selectedTeam));
+        result = await addParticipant(slug, newName, team.id, team.name);
+      }
       setParticipants(prev => [...prev, result]);
       setNewName('');
       setSelectedTeam('');
@@ -56,6 +64,8 @@ export default function AdminManagePage() {
     }
   };
 
+  const [copiedId, setCopiedId] = useState(null);
+
   const handleRemove = async (participantId) => {
     try {
       await removeParticipant(slug, participantId);
@@ -63,6 +73,12 @@ export default function AdminManagePage() {
     } catch (err) {
       setError(err.message);
     }
+  };
+
+  const handleCopyLink = (link) => {
+    navigator.clipboard.writeText(window.location.origin + link);
+    setCopiedId(link);
+    setTimeout(() => setCopiedId(null), 2000);
   };
 
   const handleLogout = async () => {
@@ -173,28 +189,30 @@ export default function AdminManagePage() {
           }}
         />
 
-        <select
-          value={selectedTeam}
-          onChange={e => setSelectedTeam(e.target.value)}
-          required
-          style={{
-            padding: '10px 14px',
-            borderRadius: 8,
-            border: '1px solid rgba(255,255,255,0.08)',
-            background: 'rgba(255,255,255,0.04)',
-            color: '#fff',
-            fontSize: 14,
-            outline: 'none',
-            appearance: 'none',
-          }}
-        >
-          <option value="" style={{ background: '#0b111e' }}>Select a team</option>
-          {availableTeams.map(t => (
-            <option key={t.id} value={t.id} style={{ background: '#0b111e' }}>
-              {t.name} ({t.group_letter ? `Group ${t.group_letter}` : 'No group'})
-            </option>
-          ))}
-        </select>
+        {!isPredictionMode && (
+          <select
+            value={selectedTeam}
+            onChange={e => setSelectedTeam(e.target.value)}
+            required
+            style={{
+              padding: '10px 14px',
+              borderRadius: 8,
+              border: '1px solid rgba(255,255,255,0.08)',
+              background: 'rgba(255,255,255,0.04)',
+              color: '#fff',
+              fontSize: 14,
+              outline: 'none',
+              appearance: 'none',
+            }}
+          >
+            <option value="" style={{ background: '#0b111e' }}>Select a team</option>
+            {availableTeams.map(t => (
+              <option key={t.id} value={t.id} style={{ background: '#0b111e' }}>
+                {t.name} ({t.group_letter ? `Group ${t.group_letter}` : 'No group'})
+              </option>
+            ))}
+          </select>
+        )}
 
         {error && <div style={{ color: 'var(--token-1)', fontSize: 13 }}>{error}</div>}
 
@@ -209,7 +227,7 @@ export default function AdminManagePage() {
           Add
         </button>
 
-        {availableTeams.length === 0 && (
+        {!isPredictionMode && availableTeams.length === 0 && (
           <div style={{ fontSize: 12, color: 'var(--color-text-muted)', textAlign: 'center' }}>
             All 48 teams have been assigned. No more available.
           </div>
@@ -231,14 +249,26 @@ export default function AdminManagePage() {
                 justifyContent: 'space-between',
                 alignItems: 'center',
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  {team?.logo_url && <img src={team.logo_url} alt="" style={{ width: 24, height: 24 }} />}
-                  <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0, flex: 1 }}>
+                  {!isPredictionMode && team?.logo_url && <img src={team.logo_url} alt="" style={{ width: 24, height: 24, flexShrink: 0 }} />}
+                  <div style={{ minWidth: 0 }}>
                     <div style={{ fontWeight: 700, fontSize: 15 }}>{p.name}</div>
-                    <div style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>
-                      {p.team_name}
-                      {team?.group_letter && ` · Group ${team.group_letter}`}
-                    </div>
+                    {isPredictionMode ? (
+                      <div style={{ fontSize: 12, color: 'var(--color-text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {p.link ? (
+                          <span style={{ fontSize: 12, color: 'var(--color-accent)', cursor: 'pointer' }} onClick={() => handleCopyLink(p.link)} title="Click to copy prediction link">
+                            {copiedId === p.link ? 'Copied!' : 'Copy prediction link'}
+                          </span>
+                        ) : (
+                          'No prediction link'
+                        )}
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>
+                        {p.team_name}
+                        {team?.group_letter && ` · Group ${team.group_letter}`}
+                      </div>
+                    )}
                   </div>
                 </div>
                 <button
@@ -250,6 +280,7 @@ export default function AdminManagePage() {
                     color: 'var(--token-1)',
                     fontSize: 12,
                     fontWeight: 600,
+                    flexShrink: 0,
                   }}
                 >
                   Remove

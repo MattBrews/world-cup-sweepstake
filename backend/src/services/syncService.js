@@ -1,6 +1,7 @@
 import { getDb } from '../db/connection.js';
 import { fetchAndSync } from './openFootball.js';
 import { syncTvChannels } from './fifaTvSync.js';
+import { recalculateAllPredictions } from './pointsCalculator.js';
 
 function logSync(endpoint, status, detail = '') {
   const db = getDb();
@@ -16,6 +17,9 @@ export async function syncAll() {
     const football = await fetchAndSync();
     Object.assign(result, football);
     logSync('openfootball', 'success');
+
+    const db = getDb();
+    recalculateAllPredictions(db);
   } catch (err) {
     logSync('openfootball', 'error', err.message);
     result.error = err.message;

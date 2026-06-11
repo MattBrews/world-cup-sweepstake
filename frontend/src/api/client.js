@@ -39,10 +39,10 @@ export function getParticipants(slug) {
   return request(`/sweepstakes/${slug}/participants`);
 }
 
-export function createSweepstake(name, slug, adminPassword) {
+export function createSweepstake(name, slug, adminPassword, mode) {
   return request('/sweepstakes', {
     method: 'POST',
-    body: JSON.stringify({ name, slug, adminPassword }),
+    body: JSON.stringify({ name, slug, adminPassword, mode }),
   });
 }
 
@@ -87,4 +87,28 @@ export function getSession() {
 
 export function triggerSync() {
   return request('/sync', { method: 'POST' });
+}
+
+export function getPredictions(ref, token) {
+  const qs = token ? `?token=${encodeURIComponent(token)}` : '';
+  return request(`/sweepstakes/${ref}/predictions${qs}`);
+}
+
+export function submitPrediction(ref, token, fixtureId, homeScore, awayScore) {
+  return request(`/sweepstakes/${ref}/predictions`, {
+    method: 'POST',
+    body: JSON.stringify({ token, fixture_id: fixtureId, home_score: homeScore, away_score: awayScore }),
+  });
+}
+
+export function getPredictionLeaderboard(ref) {
+  return request(`/sweepstakes/${ref}/predictions/leaderboard`);
+}
+
+export function getParticipantToken(slug, id) {
+  return request(`/sweepstakes/${slug}/participants/${id}/token`);
+}
+
+export function getAdminParticipants(slug) {
+  return request(`/sweepstakes/${slug}/admin/participants`);
 }
