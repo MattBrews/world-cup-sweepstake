@@ -79,6 +79,10 @@ export default function MatchCard({ fixture, homeTeam, awayTeam, participants, t
       <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginBottom: 6 }}>
         {isLive ? '🔴 LIVE' : `${dateStr} · ${timeStr}`}
         {fixture.round && <span style={{ marginLeft: 8 }}>{fixture.round}</span>}
+        <span style={{ marginLeft: 8 }}>
+          {fixture.tv_channel || ''}
+          {fixture.venue ? (fixture.tv_channel ? ` · ${fixture.venue}` : fixture.venue) : ''}
+        </span>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
