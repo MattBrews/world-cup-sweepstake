@@ -161,7 +161,7 @@ export default function BracketView({ fixtures, allFixtures = [], teams, partici
                                 textOverflow: 'ellipsis',
                                 color: homeTeam ? undefined : 'var(--color-text-muted)',
                                 fontStyle: homeTeam ? undefined : 'italic',
-                              }}>
+                              }} title={homeLabel}>
                                 {homeLabel}
                               </span>
                               {homeTeam && teamToParticipant[homeTeam.id] && (
@@ -172,7 +172,7 @@ export default function BracketView({ fixtures, allFixtures = [], teams, partici
                                   whiteSpace: 'nowrap',
                                   overflow: 'hidden',
                                   textOverflow: 'ellipsis',
-                                }}>
+                                }} title={teamToParticipant[homeTeam.id]}>
                                   {teamToParticipant[homeTeam.id]}
                                 </span>
                               )}
@@ -193,7 +193,7 @@ export default function BracketView({ fixtures, allFixtures = [], teams, partici
                                 textOverflow: 'ellipsis',
                                 color: awayTeam ? undefined : 'var(--color-text-muted)',
                                 fontStyle: awayTeam ? undefined : 'italic',
-                              }}>
+                              }} title={awayLabel}>
                                 {awayLabel}
                               </span>
                               {awayTeam && teamToParticipant[awayTeam.id] && (
@@ -204,7 +204,7 @@ export default function BracketView({ fixtures, allFixtures = [], teams, partici
                                   whiteSpace: 'nowrap',
                                   overflow: 'hidden',
                                   textOverflow: 'ellipsis',
-                                }}>
+                                }} title={teamToParticipant[awayTeam.id]}>
                                   {teamToParticipant[awayTeam.id]}
                                 </span>
                               )}

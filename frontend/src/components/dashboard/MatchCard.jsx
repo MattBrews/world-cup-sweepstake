@@ -94,7 +94,7 @@ export default function MatchCard({ fixture, homeTeam, awayTeam, participants, t
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span>{timeStr}</span>
-              {fixture.venue && <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '60%', textAlign: 'right' }}>{fixture.venue}</span>}
+              {fixture.venue && <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '60%', textAlign: 'right' }} title={fixture.venue}>{fixture.venue}</span>}
             </div>
           </>
         )}
@@ -104,8 +104,8 @@ export default function MatchCard({ fixture, homeTeam, awayTeam, participants, t
         <div style={{ flex: 1, textAlign: 'right', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6, minWidth: 0 }}>
           {homeTeam?.logo_url && <img src={homeTeam.logo_url} alt="" style={{ width: 18, height: 18, flexShrink: 0 }} />}
           <div style={{ minWidth: 0 }}>
-            <span style={{ fontWeight: homeTeam ? 600 : 400, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block', color: homeTeam ? undefined : 'var(--color-text-muted)', fontStyle: homeTeam ? undefined : 'italic' }}>{homeLabel}</span>
-            <div style={{ fontSize: 10, color: homeParticipant ? 'var(--color-accent)' : 'transparent', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{homeParticipant?.name || '\u00A0'}</div>
+            <span style={{ fontWeight: homeTeam ? 600 : 400, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block', color: homeTeam ? undefined : 'var(--color-text-muted)', fontStyle: homeTeam ? undefined : 'italic' }} title={homeLabel}>{homeLabel}</span>
+            <div style={{ fontSize: 10, color: homeParticipant ? 'var(--color-accent)' : 'transparent', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={homeParticipant?.name}>{homeParticipant?.name || '\u00A0'}</div>
           </div>
         </div>
 
@@ -125,8 +125,8 @@ export default function MatchCard({ fixture, homeTeam, awayTeam, participants, t
 
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
           <div style={{ minWidth: 0 }}>
-            <span style={{ fontWeight: awayTeam ? 600 : 400, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block', color: awayTeam ? undefined : 'var(--color-text-muted)', fontStyle: awayTeam ? undefined : 'italic' }}>{awayLabel}</span>
-            <div style={{ fontSize: 10, color: awayParticipant ? 'var(--color-accent)' : 'transparent', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{awayParticipant?.name || '\u00A0'}</div>
+            <span style={{ fontWeight: awayTeam ? 600 : 400, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block', color: awayTeam ? undefined : 'var(--color-text-muted)', fontStyle: awayTeam ? undefined : 'italic' }} title={awayLabel}>{awayLabel}</span>
+            <div style={{ fontSize: 10, color: awayParticipant ? 'var(--color-accent)' : 'transparent', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={awayParticipant?.name}>{awayParticipant?.name || '\u00A0'}</div>
           </div>
           {awayTeam?.logo_url && <img src={awayTeam.logo_url} alt="" style={{ width: 18, height: 18, flexShrink: 0 }} />}
         </div>

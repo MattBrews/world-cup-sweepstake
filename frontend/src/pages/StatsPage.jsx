@@ -193,7 +193,7 @@ export default function StatsPage() {
                       <span style={{ fontSize: 10, color: 'var(--color-text-muted)', transition: 'transform 0.15s', transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>
                         ▶
                       </span>
-                      <span style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={person.name}>
                         {person.name}
                       </span>
                     </div>
@@ -240,7 +240,7 @@ export default function StatsPage() {
                           ) : (
                             <span />
                           )}
-                          <span style={{ fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          <span style={{ fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={t.teamName}>
                             {t.teamName}
                           </span>
                           <span style={{ textAlign: 'center', fontWeight: 600 }}>{t.points}</span>
@@ -304,7 +304,7 @@ export default function StatsPage() {
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap',
-                  }}>
+                  }} title={item.name}>
                     {item.name}
                   </div>
                   {item.claimedBy && (
@@ -315,7 +315,7 @@ export default function StatsPage() {
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap',
-                    }}>
+                    }} title={item.claimedBy}>
                       {item.claimedBy}
                     </div>
                   )}

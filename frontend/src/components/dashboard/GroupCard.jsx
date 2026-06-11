@@ -15,7 +15,7 @@ function ParticipantBadge({ name, color }) {
       whiteSpace: 'nowrap',
       overflow: 'hidden',
       textOverflow: 'ellipsis',
-    }}>
+    }} title={name}>
       {name}
     </span>
   );
@@ -98,7 +98,7 @@ export default function GroupCard({ groupLetter, standings, participants, teamMa
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
-                  }}>
+                  }} title={team?.name || `Team #${row.team_id}`}>
                     {team?.name || `Team #${row.team_id}`}
                   </span>
                   {participant && (
