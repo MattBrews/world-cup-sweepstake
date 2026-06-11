@@ -3,7 +3,7 @@ import { Router } from 'express';
 import bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 import { getDb } from '../db/connection.js';
-import { requireAdmin, requireMasterAdmin } from '../middleware/auth.js';
+import { requireAdmin, requireMasterAdmin, requireSweepstakeOrMasterAdmin } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -47,19 +47,21 @@ router.post('/', requireMasterAdmin, (req, res) => {
   res.status(201).json({ id, name, slug, public_id: publicId });
 });
 
-router.put('/:slug', requireMasterAdmin, (req, res) => {
+router.put('/:slug', requireSweepstakeOrMasterAdmin, (req, res) => {
   const { name, adminPassword, slug } = req.body;
   const db = getDb();
   const sweep = db.prepare('SELECT id, public_id FROM sweepstakes WHERE slug = ?').get(req.params.slug);
   if (!sweep) return res.status(404).json({ error: 'Not found' });
 
-  if (slug !== undefined) {
+  const isMaster = req.session.admin === 'master';
+
+  if (slug !== undefined && isMaster) {
     if (!slug) return res.status(400).json({ error: 'Slug cannot be empty' });
     const existing = db.prepare('SELECT id FROM sweepstakes WHERE slug = ? AND id != ?').get(slug, sweep.id);
     if (existing) return res.status(409).json({ error: 'Slug already taken' });
     db.prepare('UPDATE sweepstakes SET slug = ? WHERE id = ?').run(slug, sweep.id);
   }
-  if (name !== undefined) {
+  if (name !== undefined && isMaster) {
     db.prepare('UPDATE sweepstakes SET name = ? WHERE id = ?').run(name, sweep.id);
   }
   if (adminPassword !== undefined) {

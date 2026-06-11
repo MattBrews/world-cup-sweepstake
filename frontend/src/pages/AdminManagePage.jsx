@@ -105,24 +105,28 @@ export default function AdminManagePage() {
         </div>
       </div>
 
-      {session?.admin === 'master' && (
+      {session?.admin && (
         <div className="glass" style={{ padding: 20, marginBottom: 24 }}>
           <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>Settings</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <div>
-              <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text-muted)', display: 'block', marginBottom: 4 }}>Name</label>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <input value={editName} onChange={e => setEditName(e.target.value)} style={{ flex: 1, padding: '8px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)', color: '#fff', fontSize: 14, outline: 'none' }} />
-                <button onClick={async () => { try { const r = await updateSweepstake(slug, { name: editName }); setEditName(r.name); setEditMsg('Name updated'); } catch (e) { setEditMsg('Error: ' + e.message); } }} style={{ padding: '8px 16px', borderRadius: 8, background: 'rgba(255,255,255,0.06)', fontWeight: 600, fontSize: 13 }}>Save</button>
-              </div>
-            </div>
-            <div>
-              <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text-muted)', display: 'block', marginBottom: 4 }}>Slug</label>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <input value={editSlug} onChange={e => setEditSlug(e.target.value)} style={{ flex: 1, padding: '8px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)', color: '#fff', fontSize: 14, outline: 'none' }} />
-                <button onClick={async () => { try { const r = await updateSweepstake(slug, { slug: editSlug }); navigate(`/admin/${r.slug}`, { replace: true }); setEditMsg('Slug updated'); } catch (e) { setEditMsg('Error: ' + e.message); } }} style={{ padding: '8px 16px', borderRadius: 8, background: 'rgba(255,255,255,0.06)', fontWeight: 600, fontSize: 13 }}>Save</button>
-              </div>
-            </div>
+            {session.admin === 'master' && (
+              <>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text-muted)', display: 'block', marginBottom: 4 }}>Name</label>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <input value={editName} onChange={e => setEditName(e.target.value)} style={{ flex: 1, padding: '8px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)', color: '#fff', fontSize: 14, outline: 'none' }} />
+                    <button onClick={async () => { try { const r = await updateSweepstake(slug, { name: editName }); setEditName(r.name); setEditMsg('Name updated'); } catch (e) { setEditMsg('Error: ' + e.message); } }} style={{ padding: '8px 16px', borderRadius: 8, background: 'rgba(255,255,255,0.06)', fontWeight: 600, fontSize: 13 }}>Save</button>
+                  </div>
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text-muted)', display: 'block', marginBottom: 4 }}>Slug</label>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <input value={editSlug} onChange={e => setEditSlug(e.target.value)} style={{ flex: 1, padding: '8px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)', color: '#fff', fontSize: 14, outline: 'none' }} />
+                    <button onClick={async () => { try { const r = await updateSweepstake(slug, { slug: editSlug }); navigate(`/admin/${r.slug}`, { replace: true }); setEditMsg('Slug updated'); } catch (e) { setEditMsg('Error: ' + e.message); } }} style={{ padding: '8px 16px', borderRadius: 8, background: 'rgba(255,255,255,0.06)', fontWeight: 600, fontSize: 13 }}>Save</button>
+                  </div>
+                </div>
+              </>
+            )}
             <div>
               <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text-muted)', display: 'block', marginBottom: 4 }}>Admin Password (leave blank to remove)</label>
               <div style={{ display: 'flex', gap: 8 }}>
