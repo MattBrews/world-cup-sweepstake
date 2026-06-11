@@ -75,7 +75,7 @@ export default function FixturesPage() {
   }
   const weeks = Object.keys(weekLabels).sort();
 
-  const isPredictionMode = data.sweepstake?.mode === 'prediction';
+  const isPredictionMode = data?.sweepstake?.mode === 'prediction';
   const navPages = isPredictionMode
     ? [
       { label: 'Dashboard', path: `/sweepstake/${publicId}` },

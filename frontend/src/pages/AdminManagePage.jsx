@@ -41,7 +41,7 @@ export default function AdminManagePage() {
     ? data.teams.filter(t => !participants.some(p => p.team_id === t.id))
     : [];
 
-  const isPredictionMode = data.sweepstake?.mode === 'prediction';
+  const isPredictionMode = data?.sweepstake?.mode === 'prediction';
 
   const handleAdd = async (e) => {
     e.preventDefault();

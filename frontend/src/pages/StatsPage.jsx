@@ -91,7 +91,7 @@ export default function StatsPage() {
       .sort((a, b) => b.points - a.points || b.goalDiff - a.goalDiff);
   }
 
-  const isPredictionMode = data.sweepstake?.mode === 'prediction';
+  const isPredictionMode = data?.sweepstake?.mode === 'prediction';
   const navPages = isPredictionMode
     ? [
       { label: 'Dashboard', path: `/sweepstake/${publicId}` },

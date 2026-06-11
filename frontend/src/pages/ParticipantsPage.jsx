@@ -25,7 +25,7 @@ export default function ParticipantsPage() {
   const teamMap = {};
   for (const t of data.teams) teamMap[t.id] = t;
 
-  const isPredictionMode = data.sweepstake?.mode === 'prediction';
+  const isPredictionMode = data?.sweepstake?.mode === 'prediction';
 
   const grouped = {};
   for (const p of participantList) {
