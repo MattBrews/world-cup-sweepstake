@@ -84,10 +84,20 @@ export default function MatchCard({ fixture, homeTeam, awayTeam, participants, t
       borderLeft: `3px solid ${isLive ? 'var(--color-accent)' : isFinished ? 'var(--token-7)' : 'rgba(255,255,255,0.1)'}`,
     }}>
       <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginBottom: 6 }}>
-        <div>{isLive ? '🔴 LIVE' : `${dateStr} ${timeStr}`}</div>
-        <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {[tvLabel(fixture.tv_channel), fixture.venue].filter(Boolean).join('  ·  ')}
-        </div>
+        {isLive ? (
+          <div>🔴 LIVE</div>
+        ) : (
+          <>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span>{dateStr}</span>
+              {tvLabel(fixture.tv_channel) && <span>{tvLabel(fixture.tv_channel)}</span>}
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span>{timeStr}</span>
+              {fixture.venue && <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '60%', textAlign: 'right' }}>{fixture.venue}</span>}
+            </div>
+          </>
+        )}
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
