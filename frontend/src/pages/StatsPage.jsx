@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link, useLocation } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
 import { getDashboard } from '../api/client';
 import Toggle from '../components/ui/Toggle';
+import PublicSidebar from '../components/public/PublicSidebar';
 
 export default function StatsPage() {
   const { publicId } = useParams();
@@ -99,37 +100,12 @@ export default function StatsPage() {
   ];
 
   return (
-    <div style={{ maxWidth: 960, margin: '0 auto', padding: '24px 16px', overflowX: 'hidden' }}>
-      <div style={{ display: 'flex', gap: 4, marginBottom: 24 }}>
-        {navPages.map(p => {
-          const isActive = location.pathname === p.path;
-          return (
-            <Link
-              key={p.label}
-              to={p.path}
-              style={{
-                flex: 1,
-                padding: '8px 8px',
-                borderRadius: 20,
-                fontSize: 12,
-                fontWeight: 600,
-                textAlign: 'center',
-                background: isActive ? 'var(--gradient-accent)' : 'rgba(255,255,255,0.04)',
-                color: isActive ? '#fff' : 'var(--color-text)',
-                border: '1px solid rgba(255,255,255,0.06)',
-                textDecoration: 'none',
-                transition: 'all 0.2s',
-              }}
-            >
-              {p.label}
-            </Link>
-          );
-        })}
-      </div>
-
-      <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 20, color: 'var(--color-accent)' }}>
-        Leaderboard
-      </h1>
+    <>
+      <PublicSidebar sweepstake={data.sweepstake} publicId={publicId} />
+      <div style={{ maxWidth: 960, margin: '0 auto', padding: '24px 16px', overflowX: 'hidden' }}>
+        <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 20, color: 'var(--color-accent)' }}>
+          Leaderboard
+        </h1>
 
       <div style={{ marginBottom: 20 }}>
         <Toggle
@@ -331,6 +307,7 @@ export default function StatsPage() {
           ))}
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 }

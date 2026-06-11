@@ -54,3 +54,27 @@ input, select {
   border: 1px solid var(--color-glass-border);
   border-radius: var(--radius-card);
 }
+
+/* Admin Sidebar Responsive */
+@media (max-width: 768px) {
+  .admin-sidebar {
+    transform: translateX(-100%);
+  }
+  
+  .admin-sidebar.open {
+    transform: translateX(0);
+  }
+  
+  .sidebar-toggle {
+    display: flex !important;
+  }
+  
+  .sidebar-overlay {
+    display: block !important;
+  }
+  
+  /* Adjust main content for mobile */
+  [style*="margin-left: 240px"] {
+    margin-left: 0 !important;
+  }
+}

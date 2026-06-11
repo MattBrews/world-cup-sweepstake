@@ -1,0 +1,8 @@
+Database: .data/sweepstakes.db
+Sync interval: every 30 minutes
+Server running on http://localhost:3000
+[fifaTvSync] Updated 72 fixtures with TV channels
+[init] Initial sync: 48 teams, 104 fixtures
+[sync] Starting scheduled sync...
+[fifaTvSync] Updated 72 fixtures with TV channels
+[sync] Complete: 48 teams, 104 fixtures, 48 standings

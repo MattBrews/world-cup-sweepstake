@@ -6,6 +6,7 @@ import StageNav from '../components/ui/StageNav';
 import GroupCard from '../components/dashboard/GroupCard';
 import MatchCard from '../components/dashboard/MatchCard';
 import BracketView from '../components/dashboard/BracketView';
+import PublicSidebar from '../components/public/PublicSidebar';
 
 export default function DashboardPage() {
   const { publicId } = useParams();
@@ -64,36 +65,10 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div style={{ maxWidth: 960, margin: '0 auto', padding: '24px 16px', overflowX: 'hidden' }}>
-      <div style={{ display: 'flex', gap: 4, marginBottom: 24 }}>
-        {navPages.map(p => {
-          const isActive = location.pathname === p.path;
-          return (
-            <Link
-              key={p.label}
-              to={p.path}
-              style={{
-                flex: 1,
-                padding: '8px 8px',
-                borderRadius: 20,
-                fontSize: 12,
-                fontWeight: 600,
-                textAlign: 'center',
-                background: isActive ? 'var(--gradient-accent)' : 'rgba(255,255,255,0.04)',
-                color: isActive ? '#fff' : 'var(--color-text)',
-                border: '1px solid rgba(255,255,255,0.06)',
-                textDecoration: 'none',
-                transition: 'all 0.2s',
-              }}
-            >
-              {p.label}
-            </Link>
-          );
-        })}
-      </div>
-
-      <div style={{ textAlign: 'center', marginBottom: 28 }}>
-        <div style={{ fontSize: 36, marginBottom: 4 }}>🏆</div>
+    <>
+      <PublicSidebar sweepstake={data.sweepstake} publicId={publicId} />
+      <div style={{ maxWidth: 960, margin: '0 auto', padding: '24px 16px', overflowX: 'hidden' }}>
+        <div style={{ textAlign: 'center', marginBottom: 28 }}>
         <h1 style={{
           fontSize: 32,
           fontWeight: 800,
@@ -175,6 +150,7 @@ export default function DashboardPage() {
           ))}
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 }

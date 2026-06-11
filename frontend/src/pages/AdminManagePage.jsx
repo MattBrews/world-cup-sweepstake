@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { getDashboard, getParticipants, addParticipant, removeParticipant, getSession, logout, updateSweepstake } from '../api/client';
+import { getDashboard, getParticipants, addParticipant, removeParticipant, getSession, updateSweepstake } from '../api/client';
+import AdminSidebar from '../components/admin/AdminSidebar';
 
 export default function AdminManagePage() {
   const { slug } = useParams();
@@ -74,36 +75,15 @@ export default function AdminManagePage() {
   if (!data) return <div style={{ textAlign: 'center', padding: 80 }}>Not found.</div>;
 
   return (
-    <div style={{ maxWidth: 960, margin: '0 auto', padding: '24px 16px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <div>
-          <h1 style={{ fontSize: 28, fontWeight: 800, color: 'var(--color-accent)' }}>{data.sweepstake.name}</h1>
-          <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>Manage Participants</div>
+    <>
+      <AdminSidebar currentSweepstake={data.sweepstake} />
+      <div style={{ marginLeft: 240, maxWidth: 960, padding: '24px 16px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+          <div>
+            <h1 style={{ fontSize: 28, fontWeight: 800, color: 'var(--color-accent)' }}>{data.sweepstake.name}</h1>
+            <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>Manage Participants</div>
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          {session?.admin === 'master' && (
-            <button onClick={() => navigate('/admin/dashboard')} style={{
-              padding: '8px 16px',
-              borderRadius: 8,
-              background: 'rgba(255,255,255,0.06)',
-              fontSize: 13,
-              fontWeight: 600,
-            }}>
-              All Sweepstakes
-            </button>
-          )}
-          <button onClick={handleLogout} style={{
-            padding: '8px 16px',
-            borderRadius: 8,
-            background: 'rgba(229,62,62,0.15)',
-            color: 'var(--token-1)',
-            fontSize: 13,
-            fontWeight: 600,
-          }}>
-            Logout
-          </button>
-        </div>
-      </div>
 
       {session?.admin && (
         <div className="glass" style={{ padding: 20, marginBottom: 24 }}>
@@ -260,5 +240,6 @@ export default function AdminManagePage() {
         )}
       </div>
     </div>
+    </>
   );
 }

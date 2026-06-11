@@ -7,6 +7,9 @@ import ParticipantsPage from './pages/ParticipantsPage';
 import AdminLoginPage from './pages/AdminLoginPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import AdminManagePage from './pages/AdminManagePage';
+import AdminSettingsPage from './pages/AdminSettingsPage';
+import AdminParticipantsPage from './pages/AdminParticipantsPage';
+import AdminSummaryPage from './pages/admin/AdminSummaryPage';
 
 export default function App() {
   return (
@@ -18,7 +21,10 @@ export default function App() {
       <Route path="/sweepstake/:publicId/participants" element={<ParticipantsPage />} />
       <Route path="/admin" element={<AdminLoginPage />} />
       <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
-      <Route path="/admin/:slug" element={<AdminManagePage />} />
+      <Route path="/admin/:slug" element={<AdminSummaryPage />} />
+      <Route path="/admin/:slug/manage" element={<AdminManagePage />} />
+      <Route path="/admin/:slug/settings" element={<AdminSettingsPage />} />
+      <Route path="/admin/:slug/participants" element={<AdminParticipantsPage />} />
     </Routes>
   );
 }

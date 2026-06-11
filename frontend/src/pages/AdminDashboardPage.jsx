@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { getSweepstakes, createSweepstake, deleteSweepstake, getSession, logout, triggerSync } from '../api/client';
+import { getSweepstakes, createSweepstake, deleteSweepstake, getSession } from '../api/client';
 
 export default function AdminDashboardPage() {
   const navigate = useNavigate();
@@ -40,48 +40,12 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const handleSync = async () => {
-    try {
-      await triggerSync();
-      alert('Sync triggered!');
-    } catch (err) {
-      alert('Sync failed: ' + err.message);
-    }
-  };
-
-  const handleLogout = async () => {
-    await logout();
-    navigate('/admin');
-  };
-
   if (loading) return <div style={{ textAlign: 'center', padding: 80, color: 'var(--color-text-muted)' }}>Loading...</div>;
 
   return (
     <div style={{ maxWidth: 960, margin: '0 auto', padding: '24px 16px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <h1 style={{ fontSize: 28, fontWeight: 800, color: 'var(--color-accent)' }}>Admin Dashboard</h1>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button onClick={handleSync} style={{
-            padding: '8px 16px',
-            borderRadius: 8,
-            background: 'rgba(255,255,255,0.06)',
-            fontSize: 13,
-            fontWeight: 600,
-            border: '1px solid rgba(255,255,255,0.08)',
-          }}>
-            Sync Now
-          </button>
-          <button onClick={handleLogout} style={{
-            padding: '8px 16px',
-            borderRadius: 8,
-            background: 'rgba(229,62,62,0.15)',
-            color: 'var(--token-1)',
-            fontSize: 13,
-            fontWeight: 600,
-          }}>
-            Logout
-          </button>
-        </div>
       </div>
 
       <div className="glass" style={{ padding: 16, marginBottom: 24, fontSize: 13, color: 'var(--color-text-muted)' }}>

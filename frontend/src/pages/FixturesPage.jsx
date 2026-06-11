@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link, useLocation } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
 import { getDashboard } from '../api/client';
 import MatchCard from '../components/dashboard/MatchCard';
+import PublicSidebar from '../components/public/PublicSidebar';
 
 function ukDate(isoStr) {
   return new Date(isoStr).toLocaleDateString('en-CA', { timeZone: 'Europe/London' });
@@ -83,80 +84,12 @@ export default function FixturesPage() {
   ];
 
   return (
-    <div style={{ maxWidth: 960, margin: '0 auto', padding: '24px 16px', overflowX: 'hidden' }}>
-      <div style={{ display: 'flex', gap: 4, marginBottom: 24 }}>
-        {navPages.map(p => {
-          const isActive = location.pathname === p.path;
-          return (
-            <Link
-              key={p.label}
-              to={p.path}
-              style={{
-                flex: 1,
-                padding: '8px 8px',
-                borderRadius: 20,
-                fontSize: 12,
-                fontWeight: 600,
-                textAlign: 'center',
-                background: isActive ? 'var(--gradient-accent)' : 'rgba(255,255,255,0.04)',
-                color: isActive ? '#fff' : 'var(--color-text)',
-                border: '1px solid rgba(255,255,255,0.06)',
-                textDecoration: 'none',
-                transition: 'all 0.2s',
-              }}
-            >
-              {p.label}
-            </Link>
-          );
-        })}
-      </div>
-
-      <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 20, color: 'var(--color-accent)' }}>
-        Fixtures & Results
-      </h1>
-
-      <div style={{ marginBottom: 12, display: 'flex', gap: 4 }}>
-        <button
-          onClick={() => { setViewMode('all'); setFilterDate(''); }}
-          style={{
-            padding: '4px 12px',
-            borderRadius: 12,
-            fontSize: 11,
-            fontWeight: 700,
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em',
-            background: viewMode === 'all' ? 'var(--gradient-accent)' : 'rgba(255,255,255,0.04)',
-            color: viewMode === 'all' ? '#fff' : 'var(--color-text-muted)',
-            border: '1px solid rgba(255,255,255,0.06)',
-          }}
-        >
-          All
-        </button>
-        {['month', 'week', 'day'].map(m => (
-          <button
-            key={m}
-            onClick={() => {
-              setViewMode(m);
-              if (m === 'day') setFilterDate(dates[0] || '');
-              else if (m === 'week') setFilterDate(weeks[0] || '');
-              else setFilterDate(months[0] ? months[0] + '-01' : '');
-            }}
-            style={{
-              padding: '4px 12px',
-              borderRadius: 12,
-              fontSize: 11,
-              fontWeight: 700,
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-              background: viewMode === m ? 'var(--gradient-accent)' : 'rgba(255,255,255,0.04)',
-              color: viewMode === m ? '#fff' : 'var(--color-text-muted)',
-              border: '1px solid rgba(255,255,255,0.06)',
-            }}
-          >
-            {m}
-          </button>
-        ))}
-      </div>
+    <>
+      <PublicSidebar sweepstake={data.sweepstake} publicId={publicId} />
+      <div style={{ maxWidth: 960, margin: '0 auto', padding: '24px 16px', overflowX: 'hidden' }}>
+        <div style={{ marginBottom: 20 }}>
+          <h1 style={{ fontSize: 28, fontWeight: 800, color: 'var(--color-accent)' }}>Fixtures</h1>
+        </div>
 
       {viewMode !== 'all' && (
       <div style={{ marginBottom: 20, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -276,6 +209,7 @@ export default function FixturesPage() {
           })()
         )}
       </div>
-    </div>
+      </div>
+    </>
   );
 }
