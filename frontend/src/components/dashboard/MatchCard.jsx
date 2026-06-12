@@ -65,6 +65,7 @@ export default function MatchCard({ fixture, homeTeam, awayTeam, participants, t
   const homeParticipant = participants.find(p => p.team_id === fixture.home_team_id);
   const awayParticipant = participants.find(p => p.team_id === fixture.away_team_id);
   const isFinished = fixture.status === 'FT';
+  const isAwaiting = fixture.status === 'AWAITING';
   const isLive = false;
 
   const fixtureMap = {};
@@ -81,11 +82,13 @@ export default function MatchCard({ fixture, homeTeam, awayTeam, participants, t
   return (
     <div className="glass" style={{
       padding: '14px 16px',
-      borderLeft: `3px solid ${isLive ? 'var(--color-accent)' : isFinished ? 'var(--token-7)' : 'rgba(255,255,255,0.1)'}`,
+      borderLeft: `3px solid ${isLive ? 'var(--color-accent)' : isFinished ? 'var(--token-7)' : isAwaiting ? 'var(--token-4)' : 'rgba(255,255,255,0.1)'}`,
     }}>
       <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginBottom: 6 }}>
         {isLive ? (
           <div>🔴 LIVE</div>
+        ) : isAwaiting ? (
+          <div style={{ color: 'var(--token-4)' }}>⏳ Awaiting result</div>
         ) : (
           <>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -118,6 +121,8 @@ export default function MatchCard({ fixture, homeTeam, awayTeam, participants, t
             <span style={{ color: 'var(--color-text)', whiteSpace: 'nowrap' }}>
               {fixture.home_score ?? '-'}:{fixture.away_score ?? '-'}
             </span>
+          ) : isAwaiting ? (
+            <span style={{ color: 'var(--token-4)', fontSize: 13, whiteSpace: 'nowrap' }}>?:?</span>
           ) : (
             <span style={{ color: 'var(--color-text-muted)', fontSize: 13, whiteSpace: 'nowrap' }}>vs</span>
           )}

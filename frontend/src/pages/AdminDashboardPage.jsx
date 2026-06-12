@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { getSweepstakes, createSweepstake, deleteSweepstake, getSession, logout, triggerSync } from '../api/client';
+import { getSweepstakes, createSweepstake, deleteSweepstake, getSession, logout, triggerSync, getConfig } from '../api/client';
 
 export default function AdminDashboardPage() {
   const navigate = useNavigate();
   const [sweepstakes, setSweepstakes] = useState([]);
   const [session, setSession] = useState(null);
+  const [config, setConfig] = useState(null);
   const [showCreate, setShowCreate] = useState(false);
   const [createForm, setCreateForm] = useState({ name: '', slug: '', adminPassword: '' });
   const [error, setError] = useState('');
@@ -19,9 +20,12 @@ export default function AdminDashboardPage() {
           return;
         }
         setSession(s);
-        return getSweepstakes();
+        return Promise.all([getSweepstakes(), getConfig()]);
       })
-      .then(s => setSweepstakes(s))
+      .then(([s, c]) => {
+        setSweepstakes(s);
+        setConfig(c);
+      })
       .catch(() => navigate('/admin'))
       .finally(() => setLoading(false));
   }, [navigate]);
@@ -85,7 +89,12 @@ export default function AdminDashboardPage() {
       </div>
 
       <div className="glass" style={{ padding: 16, marginBottom: 24, fontSize: 13, color: 'var(--color-text-muted)' }}>
-        Data source: <strong>openfootball/worldcup.json</strong> (free, no API key required, updated daily)
+        <div style={{ fontWeight: 700, marginBottom: 8, color: 'var(--color-text)' }}>Data sources</div>
+        {config?.sources?.map(s => (
+          <div key={s.name} style={{ marginBottom: 4, lineHeight: 1.6 }}>
+            <strong>{s.name}</strong> — {s.description}
+          </div>
+        )) || 'Loading...'}
       </div>
 
       <button

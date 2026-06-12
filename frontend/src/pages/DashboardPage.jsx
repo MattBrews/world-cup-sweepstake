@@ -93,7 +93,6 @@ export default function DashboardPage() {
       </div>
 
       <div style={{ textAlign: 'center', marginBottom: 28 }}>
-        <div style={{ fontSize: 36, marginBottom: 4 }}>🏆</div>
         <h1 style={{
           fontSize: 32,
           fontWeight: 800,
@@ -113,7 +112,7 @@ export default function DashboardPage() {
         </h3>
         <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
           {data.fixtures
-            .filter(f => f.status !== 'FT')
+            .filter(f => f.status !== 'FT' && f.status !== 'AWAITING')
             .sort((a, b) => new Date(a.date) - new Date(b.date))
             .slice(0, 5)
             .map(f => (
@@ -128,7 +127,7 @@ export default function DashboardPage() {
                 />
               </div>
             ))}
-          {data.fixtures.filter(f => f.status !== 'FT').length === 0 && (
+          {data.fixtures.filter(f => f.status !== 'FT' && f.status !== 'AWAITING').length === 0 && (
             <p style={{ color: 'var(--color-text-muted)', fontSize: 13, padding: '8px 0' }}>All matches played.</p>
           )}
         </div>

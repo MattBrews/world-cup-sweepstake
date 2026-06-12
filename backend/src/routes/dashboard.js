@@ -50,7 +50,7 @@ function detectCurrentStage(fixtures) {
   const stages = ['Group Stage', 'Round of 32', 'Round of 16', 'Quarter-finals', 'Semi-finals', '3rd Place', 'Final'];
 
   const lastUnplayed = fixtures
-    .filter(f => f.status !== 'FT')
+    .filter(f => f.status !== 'FT' && f.status !== 'AWAITING')
     .sort((a, b) => new Date(a.date) - new Date(b.date))[0];
 
   if (!lastUnplayed) return stages[stages.length - 1];

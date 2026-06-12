@@ -85,6 +85,10 @@ export function getSession() {
   return request('/auth/session');
 }
 
+export function getConfig() {
+  return request('/config');
+}
+
 export function triggerSync() {
   return request('/sync', { method: 'POST' });
 }

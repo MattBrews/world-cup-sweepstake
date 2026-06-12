@@ -1,5 +1,6 @@
 import { getDb } from '../db/connection.js';
 import { fetchAndSync } from './openFootball.js';
+import { fetchAndUpdateScores } from './upboundWeb.js';
 import { syncTvChannels } from './fifaTvSync.js';
 
 function logSync(endpoint, status, detail = '') {
@@ -19,6 +20,28 @@ export async function syncAll() {
   } catch (err) {
     logSync('openfootball', 'error', err.message);
     result.error = err.message;
+  }
+
+  try {
+    const upbound = await fetchAndUpdateScores();
+    result.upboundScores = upbound.updated;
+    logSync('upbound-web', 'success', `${upbound.updated} scores updated`);
+  } catch (err) {
+    logSync('upbound-web', 'error', err.message);
+  }
+
+  try {
+    const db = getDb();
+    const now = new Date();
+    const { changes } = db.prepare(
+      "UPDATE cached_fixtures SET status = 'AWAITING' WHERE status = 'SCHEDULED' AND date < ?"
+    ).run(now.toISOString());
+    if (changes > 0) {
+      result.awaiting = changes;
+      logSync('awaiting-marker', 'info', `${changes} matches marked awaiting`);
+    }
+  } catch (err) {
+    logSync('awaiting-marker', 'error', err.message);
   }
 
   try {
