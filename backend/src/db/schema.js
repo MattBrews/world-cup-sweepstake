@@ -87,6 +87,18 @@ export function runMigrations() {
     // column already exists
   }
 
+  // Add HT score columns if not exists
+  try {
+    db.exec("ALTER TABLE cached_fixtures ADD COLUMN home_ht_score INTEGER");
+  } catch {
+    // column already exists
+  }
+  try {
+    db.exec("ALTER TABLE cached_fixtures ADD COLUMN away_ht_score INTEGER");
+  } catch {
+    // column already exists
+  }
+
   const missing = db.prepare('SELECT id FROM sweepstakes WHERE public_id IS NULL').all();
   const update = db.prepare('UPDATE sweepstakes SET public_id = ? WHERE id = ?');
   for (const row of missing) {

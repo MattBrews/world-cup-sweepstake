@@ -118,11 +118,19 @@ export default function MatchCard({ fixture, homeTeam, awayTeam, participants, t
           fontWeight: 800,
           fontSize: 16,
           flexShrink: 0,
+          textAlign: 'center',
         }}>
           {isFinished || isLive ? (
-            <span style={{ color: 'var(--color-text)', whiteSpace: 'nowrap' }}>
-              {fixture.home_score ?? '-'}:{fixture.away_score ?? '-'}
-            </span>
+            <>
+              <span style={{ color: 'var(--color-text)', whiteSpace: 'nowrap' }}>
+                {fixture.home_score ?? '-'}:{fixture.away_score ?? '-'}
+              </span>
+              {(fixture.home_ht_score ?? fixture.away_ht_score) != null && (
+                <div style={{ fontSize: 10, fontWeight: 500, color: 'var(--color-text-muted)', whiteSpace: 'nowrap', marginTop: 1 }}>
+                  HT {fixture.home_ht_score ?? '-'}:{fixture.away_ht_score ?? '-'}
+                </div>
+              )}
+            </>
           ) : isAwaiting ? (
             <span style={{ color: 'var(--token-4)', fontSize: 13, whiteSpace: 'nowrap' }}>?:?</span>
           ) : (

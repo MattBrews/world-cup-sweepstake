@@ -25,7 +25,7 @@ export async function fetchAndUpdateScores() {
   }
 
   const updateStmt = db.prepare(
-    'UPDATE cached_fixtures SET home_score = ?, away_score = ?, status = ? WHERE id = ?'
+    'UPDATE cached_fixtures SET home_score = ?, away_score = ?, home_ht_score = ?, away_ht_score = ?, status = ? WHERE id = ?'
   );
 
   let updated = 0;
@@ -40,7 +40,7 @@ export async function fetchAndUpdateScores() {
     const fixtureId = fixtureByKey[key];
     if (!fixtureId) continue;
 
-    updateStmt.run(m.score.ft[0], m.score.ft[1], 'FT', fixtureId);
+    updateStmt.run(m.score.ft[0], m.score.ft[1], m.score.ht?.[0] ?? null, m.score.ht?.[1] ?? null, 'FT', fixtureId);
     updated++;
   }
 
