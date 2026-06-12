@@ -83,9 +83,13 @@ export async function fetchAndSync() {
   const matches = data.matches || [];
 
   const db = getDb();
-  db.prepare('DELETE FROM cached_teams').run();
-  db.prepare('DELETE FROM cached_fixtures').run();
+  // Delete child tables first to respect FK constraints
+  db.prepare('DELETE FROM match_events').run();
+  db.prepare('DELETE FROM match_lineups').run();
+  db.prepare('DELETE FROM cached_top_scorers').run();
   db.prepare('DELETE FROM cached_standings').run();
+  db.prepare('DELETE FROM cached_fixtures').run();
+  db.prepare('DELETE FROM cached_teams').run();
 
   nextId = 0;
   Object.keys(teamCache).forEach(k => delete teamCache[k]);

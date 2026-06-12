@@ -96,3 +96,12 @@ export function getConfig() {
 export function triggerSync() {
   return request('/sync', { method: 'POST' });
 }
+
+export function getMatchDetails(slug, matchId) {
+  return request(`/sweepstakes/${slug}/match-details/${matchId}`);
+}
+
+export function getStats(slug, type) {
+  const qs = type ? `?type=${type}` : '';
+  return request(`/sweepstakes/${slug}/stats${qs}`);
+}

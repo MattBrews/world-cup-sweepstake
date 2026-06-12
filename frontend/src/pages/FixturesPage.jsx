@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link, useLocation } from 'react-router-dom';
+import { useParams, Link, useLocation, useSearchParams } from 'react-router-dom';
 import { getDashboard } from '../api/client';
 import MatchCard from '../components/dashboard/MatchCard';
+import MatchDetailModal from '../components/dashboard/MatchDetailModal';
 
 function ukDate(isoStr) {
   return new Date(isoStr).toLocaleDateString('en-CA', { timeZone: 'Europe/London' });
@@ -10,10 +11,13 @@ function ukDate(isoStr) {
 export default function FixturesPage() {
   const { publicId } = useParams();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [data, setData] = useState(null);
-  const [filterDate, setFilterDate] = useState('');
-  const [viewMode, setViewMode] = useState('all');
   const [loading, setLoading] = useState(true);
+  const [selectedMatchId, setSelectedMatchId] = useState(null);
+
+  const viewMode = searchParams.get('view') || 'month';
+  const filterDate = searchParams.get('date') || '';
 
   useEffect(() => {
     getDashboard(publicId)
@@ -27,25 +31,6 @@ export default function FixturesPage() {
 
   const teamMap = {};
   for (const t of data.teams) teamMap[t.id] = t;
-
-  let fixtures = data.fixtures;
-  if (filterDate) {
-    if (viewMode === 'month') {
-      const m = filterDate.slice(0, 7);
-      fixtures = fixtures.filter(f => ukDate(f.date).slice(0, 7) === m);
-    } else if (viewMode === 'week') {
-      const endDate = new Date(filterDate + 'T12:00:00+01:00');
-      endDate.setUTCDate(endDate.getUTCDate() + 7);
-      const endStr = endDate.toLocaleDateString('en-CA', { timeZone: 'Europe/London' });
-      fixtures = fixtures.filter(f => {
-        const ukd = ukDate(f.date);
-        return ukd >= filterDate && ukd < endStr;
-      });
-    } else {
-      fixtures = fixtures.filter(f => ukDate(f.date) === filterDate);
-    }
-  }
-  fixtures.sort((a, b) => new Date(a.date) - new Date(b.date));
 
   const dates = [...new Set(data.fixtures.map(f => ukDate(f.date)))].sort();
 
@@ -74,6 +59,31 @@ export default function FixturesPage() {
     }
   }
   const weeks = Object.keys(weekLabels).sort();
+
+  let fixtures = data.fixtures;
+  if (filterDate) {
+    if (viewMode === 'month') {
+      const m = filterDate.slice(0, 7);
+      fixtures = fixtures.filter(f => ukDate(f.date).slice(0, 7) === m);
+    } else if (viewMode === 'week') {
+      const endDate = new Date(filterDate + 'T12:00:00+01:00');
+      endDate.setUTCDate(endDate.getUTCDate() + 7);
+      const endStr = endDate.toLocaleDateString('en-CA', { timeZone: 'Europe/London' });
+      fixtures = fixtures.filter(f => {
+        const ukd = ukDate(f.date);
+        return ukd >= filterDate && ukd < endStr;
+      });
+    } else if (viewMode === 'day') {
+      fixtures = fixtures.filter(f => ukDate(f.date) === filterDate);
+    }
+  }
+  fixtures.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  function setView(mode, date) {
+    const params = { view: mode };
+    if (date) params.date = date;
+    setSearchParams(params);
+  }
 
   const navPages = [
     { label: 'Dashboard', path: `/sweepstake/${publicId}` },
@@ -115,31 +125,15 @@ export default function FixturesPage() {
         Fixtures & Results
       </h1>
 
-      <div style={{ marginBottom: 12, display: 'flex', gap: 4 }}>
-        <button
-          onClick={() => { setViewMode('all'); setFilterDate(''); }}
-          style={{
-            padding: '4px 12px',
-            borderRadius: 12,
-            fontSize: 11,
-            fontWeight: 700,
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em',
-            background: viewMode === 'all' ? 'var(--gradient-accent)' : 'rgba(255,255,255,0.04)',
-            color: viewMode === 'all' ? '#fff' : 'var(--color-text-muted)',
-            border: '1px solid rgba(255,255,255,0.06)',
-          }}
-        >
-          All
-        </button>
-        {['month', 'week', 'day'].map(m => (
+      <div style={{ marginBottom: 12, display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+        {['all', 'month', 'week', 'day'].map(m => (
           <button
             key={m}
             onClick={() => {
-              setViewMode(m);
-              if (m === 'day') setFilterDate(dates[0] || '');
-              else if (m === 'week') setFilterDate(weeks[0] || '');
-              else setFilterDate(months[0] ? months[0] + '-01' : '');
+              if (m === 'all') setView('all');
+              else if (m === 'day') setView(m, dates[0] || '');
+              else if (m === 'week') setView(m, weeks[0] || '');
+              else setView(m, months[0] ? months[0] + '-01' : '');
             }}
             style={{
               padding: '4px 12px',
@@ -153,7 +147,7 @@ export default function FixturesPage() {
               border: '1px solid rgba(255,255,255,0.06)',
             }}
           >
-            {m}
+            {m === 'all' ? 'All' : m.charAt(0).toUpperCase() + m.slice(1)}
           </button>
         ))}
       </div>
@@ -166,7 +160,7 @@ export default function FixturesPage() {
           return (
             <button
               key={d}
-              onClick={() => setFilterDate(d)}
+              onClick={() => setView('day', d)}
               style={{
                 padding: '6px 14px',
                 borderRadius: 20,
@@ -190,7 +184,7 @@ export default function FixturesPage() {
           return (
             <button
               key={w}
-              onClick={() => setFilterDate(w)}
+              onClick={() => setView('week', w)}
               style={{
                 padding: '6px 14px',
                 borderRadius: 20,
@@ -210,7 +204,7 @@ export default function FixturesPage() {
           return (
             <button
               key={m}
-              onClick={() => setFilterDate(m + '-01')}
+              onClick={() => setView('month', m + '-01')}
               style={{
                 padding: '6px 14px',
                 borderRadius: 20,
@@ -267,6 +261,7 @@ export default function FixturesPage() {
                         awayTeam={teamMap[f.away_team_id]}
                         participants={data.participants}
                         allFixtures={data.fixtures}
+                        onClick={setSelectedMatchId}
                       />
                     ))}
                   </div>
@@ -276,6 +271,12 @@ export default function FixturesPage() {
           })()
         )}
       </div>
+
+      <MatchDetailModal
+        publicId={publicId}
+        matchId={selectedMatchId}
+        onClose={() => setSelectedMatchId(null)}
+      />
     </div>
   );
 }

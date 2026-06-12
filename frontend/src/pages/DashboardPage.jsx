@@ -1,20 +1,23 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { getDashboard, getRecentResults } from '../api/client';
 import ProgressBar from '../components/ui/ProgressBar';
 import StageNav from '../components/ui/StageNav';
 import GroupCard from '../components/dashboard/GroupCard';
 import MatchCard from '../components/dashboard/MatchCard';
 import BracketView from '../components/dashboard/BracketView';
+import MatchDetailModal from '../components/dashboard/MatchDetailModal';
 
 export default function DashboardPage() {
   const { publicId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeStage, setActiveStage] = useState(null);
+  const [activeStage, setActiveStage] = useState(searchParams.get('stage') || null);
   const [recentResults, setRecentResults] = useState([]);
+  const [selectedMatchId, setSelectedMatchId] = useState(null);
 
   useEffect(() => {
     Promise.all([
@@ -53,6 +56,12 @@ export default function DashboardPage() {
     groupedStandings[s.group_letter].push(s);
   }
   const groupLetters = Object.keys(groupedStandings).sort();
+
+  function setStage(stage) {
+    setActiveStage(stage);
+    if (stage) setSearchParams({ stage });
+    else setSearchParams({});
+  }
 
   const navPages = [
     { label: 'Dashboard', path: `/sweepstake/${publicId}` },
@@ -122,6 +131,7 @@ export default function DashboardPage() {
                   participants={data.participants}
                   teams={data.teams}
                   allFixtures={data.fixtures}
+                  onClick={setSelectedMatchId}
                 />
               </div>
             ))}
@@ -147,6 +157,7 @@ export default function DashboardPage() {
                   teams={data.teams}
                   allFixtures={data.fixtures}
                   compact
+                  onClick={setSelectedMatchId}
                 />
               </div>
             ))}
@@ -158,7 +169,7 @@ export default function DashboardPage() {
         <StageNav
           current={data.currentStage}
           activeStage={activeStage}
-          onSelect={setActiveStage}
+          onSelect={setStage}
         />
       </div>
 
@@ -176,6 +187,7 @@ export default function DashboardPage() {
           allFixtures={data.fixtures}
           teams={data.teams}
           participants={data.participants}
+          onClick={setSelectedMatchId}
         />
       ) : (
         <div style={{
@@ -195,6 +207,11 @@ export default function DashboardPage() {
           ))}
         </div>
       )}
+      <MatchDetailModal
+        publicId={publicId}
+        matchId={selectedMatchId}
+        onClose={() => setSelectedMatchId(null)}
+      />
     </div>
   );
 }

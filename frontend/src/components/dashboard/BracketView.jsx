@@ -54,7 +54,7 @@ function feederLabel(label, fixtureMap, roundPositions) {
   return label;
 }
 
-export default function BracketView({ fixtures, allFixtures = [], teams, participants = [] }) {
+export default function BracketView({ fixtures, allFixtures = [], teams, participants = [], onClick }) {
   const fixtureMap = {};
   for (const f of allFixtures) fixtureMap[f.id] = f;
 
@@ -135,10 +135,18 @@ export default function BracketView({ fixtures, allFixtures = [], teams, partici
                         marginRight: 0,
                       }} />
                     )}
-                    <div className="glass" style={{
-                      padding: '10px 12px',
-                      borderLeft: `3px solid ${isFinished ? 'var(--token-7)' : 'rgba(255,255,255,0.1)'}`,
-                    }}>
+                    <div
+                      className="glass"
+                      onClick={onClick ? () => onClick(f.id) : undefined}
+                      style={{
+                        padding: '10px 12px',
+                        borderLeft: `3px solid ${isFinished ? 'var(--token-7)' : 'rgba(255,255,255,0.1)'}`,
+                        cursor: onClick ? 'pointer' : undefined,
+                        transition: onClick ? 'transform 0.15s, box-shadow 0.15s' : undefined,
+                      }}
+                      onMouseEnter={onClick ? e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.3)'; } : undefined}
+                      onMouseLeave={onClick ? e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = ''; } : undefined}
+                    >
                       {pos && (
                         <div style={{
                           fontSize: 10,

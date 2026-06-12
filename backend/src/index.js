@@ -59,7 +59,9 @@ const dbPath = path.join(config.dataDir, 'sweepstakes.db');
 console.log(`Database: ${dbPath}`);
 console.log(`Sync interval: every ${config.syncIntervalMinutes} minutes`);
 
-cron.schedule(`*/${config.syncIntervalMinutes} * * * *`, async () => {
+const intervalMin = config.syncIntervalMinutes;
+const cronExpr = intervalMin < 60 ? `*/${intervalMin} * * * *` : `0 */${Math.round(intervalMin / 60)} * * *`;
+cron.schedule(cronExpr, async () => {
   console.log('[sync] Starting scheduled sync...');
   try {
     const results = await syncAll();

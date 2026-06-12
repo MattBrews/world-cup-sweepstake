@@ -61,7 +61,7 @@ function buildRoundPositions(allFixtures) {
   return pos;
 }
 
-export default function MatchCard({ fixture, homeTeam, awayTeam, participants, teams, allFixtures, compact }) {
+export default function MatchCard({ fixture, homeTeam, awayTeam, participants, teams, allFixtures, compact, onClick }) {
   const homeParticipant = participants.find(p => p.team_id === fixture.home_team_id);
   const awayParticipant = participants.find(p => p.team_id === fixture.away_team_id);
   const isFinished = fixture.status === 'FT';
@@ -80,10 +80,18 @@ export default function MatchCard({ fixture, homeTeam, awayTeam, participants, t
   const dateStr = date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Europe/London' });
 
   return (
-    <div className="glass" style={{
-      padding: '14px 16px',
-      borderLeft: `3px solid ${isLive ? 'var(--color-accent)' : isFinished ? 'var(--token-7)' : isAwaiting ? 'var(--token-4)' : 'rgba(255,255,255,0.1)'}`,
-    }}>
+    <div
+      className="glass"
+      onClick={onClick ? () => onClick(fixture.id) : undefined}
+      style={{
+        padding: '14px 16px',
+        borderLeft: `3px solid ${isLive ? 'var(--color-accent)' : isFinished ? 'var(--token-7)' : isAwaiting ? 'var(--token-4)' : 'rgba(255,255,255,0.1)'}`,
+        cursor: onClick ? 'pointer' : undefined,
+        transition: onClick ? 'transform 0.15s, box-shadow 0.15s' : undefined,
+      }}
+      onMouseEnter={onClick ? e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.3)'; } : undefined}
+      onMouseLeave={onClick ? e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = ''; } : undefined}
+    >
       {!compact && (
         <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginBottom: 6 }}>
           {isLive ? (

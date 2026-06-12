@@ -1,7 +1,9 @@
 import { getDb } from '../db/connection.js';
 import { fetchAndSync } from './openFootball.js';
 import { fetchAndUpdateScores } from './upboundWeb.js';
+import { syncApiMatchIds } from './fifaCalendar.js';
 import { syncTvChannels } from './fifaTvSync.js';
+import { syncMatchDetails } from './fifaMatchDetails.js';
 
 function logSync(endpoint, status, detail = '') {
   const db = getDb();
@@ -45,11 +47,27 @@ export async function syncAll() {
   }
 
   try {
+    const cal = await syncApiMatchIds();
+    result.apiMatchIds = cal.apiMatchIdsSynced;
+    logSync('fifaCalendar', 'success', `${cal.apiMatchIdsSynced} IDs synced`);
+  } catch (err) {
+    logSync('fifaCalendar', 'error', err.message);
+  }
+
+  try {
     const tv = await syncTvChannels();
     result.tvChannels = tv.channelsUpdated;
     logSync('fifaTvSync', 'success', `${tv.channelsUpdated} channels`);
   } catch (err) {
     logSync('fifaTvSync', 'error', err.message);
+  }
+
+  try {
+    const details = await syncMatchDetails();
+    result.matchDetails = details.matchesUpdated;
+    logSync('fifaMatchDetails', 'success', `${details.matchesUpdated} matches, ${details.events} events`);
+  } catch (err) {
+    logSync('fifaMatchDetails', 'error', err.message);
   }
 
   return result;

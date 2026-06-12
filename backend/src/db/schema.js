@@ -60,12 +60,6 @@ export function runMigrations() {
       goal_diff INTEGER
     );
 
-    CREATE TABLE IF NOT EXISTS cached_top_scorers (
-      player_name TEXT,
-      team_id INTEGER,
-      goals INTEGER
-    );
-
     CREATE TABLE IF NOT EXISTS sync_log (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       endpoint TEXT,
@@ -98,6 +92,58 @@ export function runMigrations() {
   } catch {
     // column already exists
   }
+
+  // Add FIFA match ID, formations, attendance, referee
+  try { db.exec("ALTER TABLE cached_fixtures ADD COLUMN api_match_id TEXT"); } catch {}
+  try { db.exec("ALTER TABLE cached_fixtures ADD COLUMN home_formation TEXT"); } catch {}
+  try { db.exec("ALTER TABLE cached_fixtures ADD COLUMN away_formation TEXT"); } catch {}
+  try { db.exec("ALTER TABLE cached_fixtures ADD COLUMN attendance INTEGER"); } catch {}
+  try { db.exec("ALTER TABLE cached_fixtures ADD COLUMN referee TEXT"); } catch {}
+
+  // Match events (timeline)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS match_events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      match_id INTEGER REFERENCES cached_fixtures(id),
+      team_id INTEGER,
+      type TEXT NOT NULL,
+      minute TEXT,
+      period INTEGER,
+      player_name TEXT,
+      additional_info TEXT
+    )
+  `);
+
+  // Match line-ups
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS match_lineups (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      match_id INTEGER REFERENCES cached_fixtures(id),
+      team_id INTEGER,
+      player_name TEXT,
+      position TEXT,
+      shirt_number INTEGER,
+      is_starter INTEGER
+    )
+  `);
+
+  // FIFA team ID to local team ID mapping
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS cached_team_mappings (
+      fifa_team_id INTEGER PRIMARY KEY,
+      local_team_id INTEGER NOT NULL
+    )
+  `);
+
+  // Top scorers (with PK for ON CONFLICT)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS cached_top_scorers (
+      player_name TEXT,
+      team_id INTEGER,
+      goals INTEGER,
+      PRIMARY KEY (player_name, team_id)
+    )
+  `);
 
   const missing = db.prepare('SELECT id FROM sweepstakes WHERE public_id IS NULL').all();
   const update = db.prepare('UPDATE sweepstakes SET public_id = ? WHERE id = ?');
