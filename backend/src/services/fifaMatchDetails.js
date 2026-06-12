@@ -177,6 +177,10 @@ export async function syncMatchDetails() {
   }
 
   console.log(`[fifaMatchDetails] Updated ${updated} matches (${totalEvents} events, ${totalLineups} lineups)`);
+  
+  // Recalculate top scorers after syncing events
+  recalculateTopScorers();
+  
   return { matchesUpdated: updated, events: totalEvents, lineups: totalLineups };
 }
 
@@ -203,4 +207,28 @@ function resolveTeamId(fifaTeamId) {
   const db = getDb();
   const row = db.prepare('SELECT local_team_id FROM cached_team_mappings WHERE fifa_team_id = ?').get(parseInt(fifaTeamId));
   return row ? row.local_team_id : null;
+}
+
+function recalculateTopScorers() {
+  const db = getDb();
+  
+  // Clear existing scorers
+  db.prepare('DELETE FROM cached_top_scorers').run();
+  
+  // Recalculate from match_events
+  const goals = db.prepare(`
+    SELECT player_name, team_id, COUNT(*) as goal_count
+    FROM match_events
+    WHERE type = 'GOAL' AND player_name IS NOT NULL
+    GROUP BY player_name, team_id
+  `).all();
+  
+  for (const goal of goals) {
+    db.prepare(
+      `INSERT INTO cached_top_scorers (player_name, team_id, goals)
+       VALUES (?, ?, ?)`
+    ).run(goal.player_name, goal.team_id, goal.goal_count);
+  }
+  
+  console.log(`[fifaMatchDetails] Recalculated top scorers: ${goals.length} players`);
 }

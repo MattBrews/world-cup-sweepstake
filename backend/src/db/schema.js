@@ -145,6 +145,22 @@ export function runMigrations() {
     )
   `);
 
+  // Fix cached_top_scorers table if it doesn't have the composite PK
+  try {
+    const tableInfo = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='cached_top_scorers'").get();
+    if (tableInfo && !tableInfo.sql.includes('PRIMARY KEY')) {
+      db.exec('DROP TABLE cached_top_scorers');
+      db.exec(`
+        CREATE TABLE cached_top_scorers (
+          player_name TEXT,
+          team_id INTEGER,
+          goals INTEGER,
+          PRIMARY KEY (player_name, team_id)
+        )
+      `);
+    }
+  } catch {}
+
   const missing = db.prepare('SELECT id FROM sweepstakes WHERE public_id IS NULL').all();
   const update = db.prepare('UPDATE sweepstakes SET public_id = ? WHERE id = ?');
   for (const row of missing) {

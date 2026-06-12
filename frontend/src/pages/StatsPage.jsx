@@ -8,6 +8,7 @@ const STAT_TABS = [
   { key: 'cards', label: 'Cards' },
   { key: 'goals', label: 'Goals' },
   { key: 'scorers', label: 'Top Scorers' },
+  { key: 'records', label: 'Records' },
 ];
 
 export default function StatsPage() {
@@ -57,7 +58,7 @@ export default function StatsPage() {
   for (const t of data.teams) teamMap[t.id] = t;
 
   const participants = data.participants;
-  const noToggle = activeTab === 'scorers';
+  const noToggle = activeTab === 'scorers' || activeTab === 'records';
 
   const navPages = [
     { label: 'Dashboard', path: `/sweepstake/${publicId}` },
@@ -142,6 +143,8 @@ export default function StatsPage() {
         <GoalsView stats={stats} teamMap={teamMap} participants={participants} view={view} />
       ) : activeTab === 'scorers' ? (
         <ScorersView stats={stats} participants={participants} />
+      ) : activeTab === 'records' ? (
+        <RecordsView stats={stats} participants={participants} />
       ) : null}
     </div>
   );
@@ -163,9 +166,9 @@ function TableHeader({ columns, labels }) {
   return (
     <div style={{
       display: 'grid',
-      gridTemplateColumns: '40px 1fr ' + columns,
+      gridTemplateColumns: '32px minmax(80px, 1fr) ' + columns,
       gap: 4,
-      padding: '12px 20px',
+      padding: '12px 12px',
       fontSize: 11,
       fontWeight: 700,
       color: 'var(--color-text-muted)',
@@ -173,8 +176,8 @@ function TableHeader({ columns, labels }) {
       letterSpacing: '0.05em',
       borderBottom: '1px solid rgba(255,255,255,0.06)',
     }}>
-      <span>#</span>
-      <span>Team</span>
+      <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>#</span>
+      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Team</span>
       {(labels || []).map((l, i) => (
         <span key={i} style={{ textAlign: 'center' }}>{l}</span>
       ))}
@@ -187,9 +190,9 @@ function TableRow({ item, i, columns, renderValue, subdued }) {
     <div
       style={{
         display: 'grid',
-        gridTemplateColumns: '40px 1fr ' + columns,
+        gridTemplateColumns: '32px minmax(80px, 1fr) ' + columns,
         gap: 4,
-        padding: subdued ? '8px 20px' : '10px 20px',
+        padding: subdued ? '8px 12px' : '10px 12px',
         fontSize: subdued ? 12 : 14,
         background: i % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent',
         alignItems: 'center',
@@ -198,14 +201,14 @@ function TableRow({ item, i, columns, renderValue, subdued }) {
       {subdued ? (
         <span />
       ) : (
-        <span style={{ fontWeight: 700, color: i < 3 ? 'var(--color-accent)' : 'var(--color-text-muted)' }}>{i + 1}</span>
+        <RankCell rank={i + 1} />
       )}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, overflow: 'hidden' }}>
         {item.logo_url && <img src={item.logo_url} alt="" style={{ width: subdued ? 14 : 20, height: subdued ? 14 : 20, flexShrink: 0 }} />}
-        <div>
+        <div style={{ minWidth: 0, overflow: 'hidden' }}>
           <div style={{ fontWeight: subdued ? 400 : 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</div>
           {item.participant_name && !subdued && (
-            <div style={{ fontSize: 11, color: 'var(--color-accent)', fontWeight: 500 }}>{item.participant_name}</div>
+            <div style={{ fontSize: 11, color: 'var(--color-accent)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.participant_name}</div>
           )}
         </div>
       </div>
@@ -220,9 +223,9 @@ function AggRow({ item, columns, renderValue, rank, chevron, onClick, alt }) {
       onClick={onClick}
       style={{
         display: 'grid',
-        gridTemplateColumns: '40px 1fr ' + columns,
+        gridTemplateColumns: '32px minmax(80px, 1fr) ' + columns,
         gap: 4,
-        padding: '10px 20px',
+        padding: '10px 12px',
         fontSize: 14,
         background: alt ? 'transparent' : 'rgba(255,255,255,0.02)',
         alignItems: 'center',
@@ -232,8 +235,8 @@ function AggRow({ item, columns, renderValue, rank, chevron, onClick, alt }) {
         userSelect: 'none',
       }}
     >
-      <span style={{ fontWeight: 700, color: 'var(--color-text-muted)' }}>{rank || ''}</span>
-      <span style={{ color: 'var(--color-text)' }}>
+      <RankCell rank={rank} />
+      <span style={{ color: 'var(--color-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
         {chevron ? <span style={{ fontSize: 10, marginRight: 6, color: 'var(--color-text-muted)' }}>{chevron}</span> : null}
         {item.name}
       </span>
@@ -272,7 +275,30 @@ function renderCell(val, opts = {}) {
       </span>
     );
   }
-  return <span style={{ textAlign: 'center', fontWeight: w }}>{val ?? '-'}</span>;
+  return <span style={{ textAlign: 'center', fontWeight: w, minWidth: '32px' }}>{val ?? '-'}</span>;
+}
+
+function getRankColor(rank) {
+  if (rank === 1) return '#FFD700'; // Gold
+  if (rank === 2) return '#C0C0C0'; // Silver
+  if (rank === 3) return '#CD7F32'; // Bronze
+  return 'var(--color-text-muted)';
+}
+
+function RankCell({ rank }) {
+  return (
+    <span style={{ 
+      fontWeight: 700, 
+      color: getRankColor(rank),
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: '100%',
+      height: '100%',
+    }}>
+      {rank || ''}
+    </span>
+  );
 }
 
 function StandingsView({ stats, teamMap, participants, view }) {
@@ -288,7 +314,7 @@ function StandingsView({ stats, teamMap, participants, view }) {
     };
   });
 
-  const cols = '44px 44px 44px 44px 44px 44px';
+  const cols = '32px 32px 32px 32px 32px 36px';
 
   if (view === 'person') {
     const people = groupByPerson(teamStats, participants);
@@ -300,11 +326,11 @@ function StandingsView({ stats, teamMap, participants, view }) {
       totalDraw: p.teams.reduce((s, t) => s + t.draw, 0),
       totalLose: p.teams.reduce((s, t) => s + t.lose, 0),
       totalGD: p.teams.reduce((s, t) => s + t.goal_diff, 0),
-    })).sort((a, b) => b.totalPoints - a.totalPoints || b.totalGD - a.totalGD);
+    })).sort((a, b) => b.totalPoints - a.totalPoints || b.totalGD - a.totalGD || a.name.localeCompare(b.name));
 
     let nextRow = 0;
     return (
-      <div className="glass" style={{ overflow: 'hidden' }}>
+      <div className="glass" style={{ overflowX: 'auto' }}>
         <TableHeader columns={cols} labels={['Pts', 'Pld', 'W', 'D', 'L', 'GD']} />
         {ranked.length === 0 ? <Empty /> : ranked.map((person, idx) => {
           const start = nextRow;
@@ -330,7 +356,7 @@ function StandingsView({ stats, teamMap, participants, view }) {
   }
 
   return (
-    <div className="glass" style={{ overflow: 'hidden' }}>
+    <div className="glass" style={{ overflowX: 'auto' }}>
       <TableHeader columns={cols} labels={['Pts', 'Pld', 'W', 'D', 'L', 'GD']} />
       {teamStats.length === 0 ? <Empty /> : teamStats.map((t, i) => (
         <TableRow key={t.team_id} item={t} i={i} columns={cols} renderValue={item => <>
@@ -355,7 +381,7 @@ function CardsView({ stats, teamMap, participants, view }) {
     };
   });
 
-  const cols = '44px 44px 44px';
+  const cols = '36px 36px 40px';
 
   if (view === 'person') {
     const people = groupByPerson(cardStats, participants);
@@ -364,11 +390,11 @@ function CardsView({ stats, teamMap, participants, view }) {
       totalYellow: p.teams.reduce((s, t) => s + t.yellow, 0),
       totalRed: p.teams.reduce((s, t) => s + t.red, 0),
       totalCards: p.teams.reduce((s, t) => s + t.total, 0),
-    })).sort((a, b) => b.totalCards - a.totalCards);
+    })).sort((a, b) => b.totalCards - a.totalCards || a.name.localeCompare(b.name));
 
     let nextRow = 0;
     return (
-      <div className="glass" style={{ overflow: 'hidden' }}>
+      <div className="glass" style={{ overflowX: 'auto' }}>
         <TableHeader columns={cols} labels={['🟨', '🟥', 'Tot']} />
         {ranked.length === 0 ? <Empty /> : ranked.map((person, idx) => {
           const start = nextRow;
@@ -390,7 +416,7 @@ function CardsView({ stats, teamMap, participants, view }) {
   }
 
   return (
-    <div className="glass" style={{ overflow: 'hidden' }}>
+    <div className="glass" style={{ overflowX: 'auto' }}>
       <TableHeader columns={cols} labels={['🟨', '🟥', 'Tot']} />
       {cardStats.length === 0 ? <Empty /> : cardStats.map((t, i) => (
         <TableRow key={t.team_id} item={t} i={i} columns={cols} renderValue={item => <><span style={{ textAlign: 'center' }}>{item.yellow}</span><span style={{ textAlign: 'center' }}>{item.red}</span><span style={{ textAlign: 'center', fontWeight: 700 }}>{item.total}</span></>} />
@@ -413,7 +439,7 @@ function GoalsView({ stats, teamMap, participants, view }) {
     };
   });
 
-  const cols = '44px 44px 44px';
+  const cols = '36px 36px 40px';
 
   if (view === 'person') {
     const people = groupByPerson(goalsStats, participants);
@@ -422,11 +448,11 @@ function GoalsView({ stats, teamMap, participants, view }) {
       totalGF: p.teams.reduce((s, t) => s + t.gf, 0),
       totalGA: p.teams.reduce((s, t) => s + t.ga, 0),
       totalGD: p.teams.reduce((s, t) => s + t.gd, 0),
-    })).sort((a, b) => b.totalGF - a.totalGF);
+    })).sort((a, b) => b.totalGF - a.totalGF || a.name.localeCompare(b.name));
 
     let nextRow = 0;
     return (
-      <div className="glass" style={{ overflow: 'hidden' }}>
+      <div className="glass" style={{ overflowX: 'auto' }}>
         <TableHeader columns={cols} labels={['GF', 'GA', 'GD']} />
         {ranked.length === 0 ? <Empty /> : ranked.map((person, idx) => {
           const start = nextRow;
@@ -448,7 +474,7 @@ function GoalsView({ stats, teamMap, participants, view }) {
   }
 
   return (
-    <div className="glass" style={{ overflow: 'hidden' }}>
+    <div className="glass" style={{ overflowX: 'auto' }}>
       <TableHeader columns={cols} labels={['GF', 'GA', 'GD']} />
       {goalsStats.length === 0 ? <Empty /> : goalsStats.map((t, i) => (
         <TableRow key={t.team_id} item={t} i={i} columns={cols} renderValue={item => <>{renderCell(item.gf)}{renderCell(item.ga)}{renderCell(item.gd, { colored: true })}</>} />
@@ -458,15 +484,15 @@ function GoalsView({ stats, teamMap, participants, view }) {
 }
 
 function ScorersView({ stats, participants }) {
-  const cols = '60px';
+  const cols = '50px';
 
   return (
-    <div className="glass" style={{ overflow: 'hidden' }}>
+    <div className="glass" style={{ overflowX: 'auto' }}>
       <div style={{
         display: 'grid',
-        gridTemplateColumns: '40px 1fr ' + cols,
+        gridTemplateColumns: '32px minmax(80px, 1fr) ' + cols,
         gap: 4,
-        padding: '12px 20px',
+        padding: '12px 12px',
         fontSize: 11,
         fontWeight: 700,
         color: 'var(--color-text-muted)',
@@ -474,8 +500,8 @@ function ScorersView({ stats, participants }) {
         letterSpacing: '0.05em',
         borderBottom: '1px solid rgba(255,255,255,0.06)',
       }}>
-        <span>#</span>
-        <span>Player</span>
+        <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>#</span>
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Player</span>
         <span style={{ textAlign: 'center' }}>Goals</span>
       </div>
       {stats.length === 0 ? <Empty /> : stats.map((s, i) => {
@@ -485,23 +511,23 @@ function ScorersView({ stats, participants }) {
             key={`${s.player_name}-${s.team_id}`}
             style={{
               display: 'grid',
-              gridTemplateColumns: '40px 1fr ' + cols,
+              gridTemplateColumns: '32px minmax(80px, 1fr) ' + cols,
               gap: 4,
-              padding: '10px 20px',
+              padding: '10px 12px',
               fontSize: 14,
               background: i % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent',
               alignItems: 'center',
             }}
           >
-            <span style={{ fontWeight: 700, color: i < 3 ? 'var(--color-accent)' : 'var(--color-text-muted)' }}>{i + 1}</span>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ fontWeight: 600 }}>{s.player_name}</span>
-                {s.logo_url && <img src={s.logo_url} alt="" style={{ width: 14, height: 14, marginLeft: 2 }} />}
-                <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{s.team_name}</span>
+            <RankCell rank={i + 1} />
+            <div style={{ minWidth: 0, overflow: 'hidden' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, overflow: 'hidden' }}>
+                <span style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.player_name}</span>
+                {s.logo_url && <img src={s.logo_url} alt="" style={{ width: 14, height: 14, marginLeft: 2, flexShrink: 0 }} />}
+                <span style={{ fontSize: 12, color: 'var(--color-text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.team_name}</span>
               </div>
               {participant && (
-                <div style={{ fontSize: 11, color: 'var(--color-accent)', fontWeight: 500 }}>
+                <div style={{ fontSize: 11, color: 'var(--color-accent)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {participant.name}
                 </div>
               )}
@@ -510,6 +536,88 @@ function ScorersView({ stats, participants }) {
           </div>
         );
       })}
+    </div>
+  );
+}
+
+function RecordsView({ stats, participants }) {
+  if (!stats || Object.keys(stats).length === 0) {
+    return <Empty />;
+  }
+
+  const getParticipant = (teamId) => {
+    if (!teamId) return null;
+    return participants.find(p => p.team_id === teamId);
+  };
+
+  const RecordRow = ({ label, record, showMinute = true, showGoals = false }) => {
+    if (!record) return null;
+    const participant = getParticipant(record.team_id);
+    
+    return (
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        padding: '12px 16px',
+        background: 'rgba(255,255,255,0.02)',
+        borderRadius: 8,
+        marginBottom: 8,
+      }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
+            {label}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {record.logo_url && <img src={record.logo_url} alt="" style={{ width: 20, height: 20, flexShrink: 0 }} />}
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontWeight: 600, fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {record.name || record.team_name}
+              </div>
+              {participant && (
+                <div style={{ fontSize: 11, color: 'var(--color-accent)', fontWeight: 500 }}>
+                  {participant.name}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+        {showMinute && record.minute != null && (
+          <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-accent)', flexShrink: 0, marginLeft: 12 }}>
+            {record.minute}'
+          </div>
+        )}
+        {showGoals && record.goals != null && (
+          <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-accent)', flexShrink: 0, marginLeft: 12 }}>
+            {record.goals}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div>
+        <h3 style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-accent)', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          Goals
+        </h3>
+        <RecordRow label="Earliest Goal" record={stats.earliestGoal} showMinute={true} />
+        <RecordRow label="Latest Goal" record={stats.latestGoal} showMinute={true} />
+        <RecordRow label="Most Goals (Tournament)" record={stats.mostGoalsTotal} showGoals={true} />
+        <RecordRow label="Most Goals (1st Half)" record={stats.mostGoalsFirstHalf} showGoals={true} />
+        <RecordRow label="Most Goals (2nd Half)" record={stats.mostGoalsSecondHalf} showGoals={true} />
+        <RecordRow label="Most Clean Sheets" record={stats.mostCleanSheets} showGoals={true} />
+      </div>
+
+      <div>
+        <h3 style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-accent)', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          Cards
+        </h3>
+        <RecordRow label="Earliest Yellow Card" record={stats.earliestYellow} showMinute={true} />
+        <RecordRow label="Latest Yellow Card" record={stats.latestYellow} showMinute={true} />
+        <RecordRow label="Earliest Red Card" record={stats.earliestRed} showMinute={true} />
+        <RecordRow label="Latest Red Card" record={stats.latestRed} showMinute={true} />
+      </div>
     </div>
   );
 }

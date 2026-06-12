@@ -16,7 +16,7 @@ export default function FixturesPage() {
   const [loading, setLoading] = useState(true);
   const [selectedMatchId, setSelectedMatchId] = useState(null);
 
-  const viewMode = searchParams.get('view') || 'month';
+  const viewMode = searchParams.get('view') || 'all';
   const filterDate = searchParams.get('date') || '';
 
   useEffect(() => {

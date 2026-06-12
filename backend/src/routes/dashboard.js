@@ -94,14 +94,22 @@ router.get('/:ref/recent-results', (req, res) => {
   const sweep = lookupSweep(req.params.ref);
   if (!sweep) return res.status(404).json({ error: 'Not found' });
 
-  const fixtures = db.prepare(
-    "SELECT * FROM cached_fixtures WHERE status = 'FT' ORDER BY date DESC"
+  const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+  // Get completed matches from last 24 hours
+  const completed = db.prepare(
+    "SELECT * FROM cached_fixtures WHERE status = 'FT' AND date >= ? ORDER BY date DESC"
+  ).all(cutoff.toISOString());
+
+  // Get awaiting/in-progress matches (started but no result yet)
+  const awaiting = db.prepare(
+    "SELECT * FROM cached_fixtures WHERE status = 'AWAITING' ORDER BY date DESC"
   ).all();
 
-  const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
-  const recent = fixtures.filter(f => new Date(f.date) >= cutoff);
+  // Combine and sort by date descending
+  const combined = [...completed, ...awaiting].sort((a, b) => new Date(b.date) - new Date(a.date));
 
-  res.json(recent);
+  res.json(combined);
 });
 
 router.get('/:ref/rounds', (req, res) => {
@@ -158,14 +166,13 @@ router.get('/:ref/stats', (req, res) => {
     const data = db.prepare(`
       SELECT
         t.id as team_id, t.name, t.logo_url,
-        SUM(CASE WHEN json_extract(me.additional_info, '$.card') = 'YELLOW' THEN 1 ELSE 0 END) as yellow,
-        SUM(CASE WHEN json_extract(me.additional_info, '$.card') IN ('RED', 'SECOND_YELLOW') THEN 1 ELSE 0 END) as red,
-        COUNT(*) as total
-      FROM match_events me
-      JOIN cached_teams t ON t.id = me.team_id
-      WHERE me.type = 'BOOKING'
-      GROUP BY me.team_id
-      ORDER BY total DESC
+        COALESCE(SUM(CASE WHEN json_extract(me.additional_info, '$.card') = 'YELLOW' THEN 1 ELSE 0 END), 0) as yellow,
+        COALESCE(SUM(CASE WHEN json_extract(me.additional_info, '$.card') IN ('RED', 'SECOND_YELLOW') THEN 1 ELSE 0 END), 0) as red,
+        COALESCE(COUNT(me.id), 0) as total
+      FROM cached_teams t
+      LEFT JOIN match_events me ON t.id = me.team_id AND me.type = 'BOOKING'
+      GROUP BY t.id
+      ORDER BY total DESC, t.name ASC
     `).all();
     return res.json(data);
   }
@@ -177,10 +184,9 @@ router.get('/:ref/stats', (req, res) => {
         COALESCE(s.goals_for, 0) as gf,
         COALESCE(s.goals_against, 0) as ga,
         COALESCE(s.goal_diff, 0) as gd
-      FROM cached_standings s
-      JOIN cached_teams t ON t.id = s.team_id
-      GROUP BY s.team_id
-      ORDER BY gf DESC
+      FROM cached_teams t
+      LEFT JOIN cached_standings s ON t.id = s.team_id
+      ORDER BY gf DESC, t.name ASC
     `).all();
     return res.json(data);
   }
@@ -190,9 +196,136 @@ router.get('/:ref/stats', (req, res) => {
       SELECT cs.player_name, cs.team_id, t.name as team_name, t.logo_url, cs.goals
       FROM cached_top_scorers cs
       JOIN cached_teams t ON t.id = cs.team_id
-      ORDER BY cs.goals DESC, cs.player_name
+      ORDER BY cs.goals DESC, cs.player_name ASC
     `).all();
     return res.json(data);
+  }
+
+  if (type === 'records') {
+    // Earliest and latest goals
+    const earliestGoal = db.prepare(`
+      SELECT t.id as team_id, t.name, t.logo_url, MIN(CAST(me.minute AS INTEGER)) as minute
+      FROM match_events me
+      JOIN cached_fixtures f ON me.match_id = f.id
+      JOIN cached_teams t ON me.team_id = t.id
+      WHERE me.type = 'GOAL'
+      GROUP BY me.id
+      ORDER BY minute ASC
+      LIMIT 1
+    `).get();
+
+    const latestGoal = db.prepare(`
+      SELECT t.id as team_id, t.name, t.logo_url, MAX(CAST(me.minute AS INTEGER)) as minute
+      FROM match_events me
+      JOIN cached_fixtures f ON me.match_id = f.id
+      JOIN cached_teams t ON me.team_id = t.id
+      WHERE me.type = 'GOAL'
+      GROUP BY me.id
+      ORDER BY minute DESC
+      LIMIT 1
+    `).get();
+
+    // Earliest and latest yellow cards
+    const earliestYellow = db.prepare(`
+      SELECT t.id as team_id, t.name, t.logo_url, MIN(CAST(me.minute AS INTEGER)) as minute
+      FROM match_events me
+      JOIN cached_fixtures f ON me.match_id = f.id
+      JOIN cached_teams t ON me.team_id = t.id
+      WHERE me.type = 'BOOKING' AND json_extract(me.additional_info, '$.card') = 'YELLOW'
+      GROUP BY me.id
+      ORDER BY minute ASC
+      LIMIT 1
+    `).get();
+
+    const latestYellow = db.prepare(`
+      SELECT t.id as team_id, t.name, t.logo_url, MAX(CAST(me.minute AS INTEGER)) as minute
+      FROM match_events me
+      JOIN cached_fixtures f ON me.match_id = f.id
+      JOIN cached_teams t ON me.team_id = t.id
+      WHERE me.type = 'BOOKING' AND json_extract(me.additional_info, '$.card') = 'YELLOW'
+      GROUP BY me.id
+      ORDER BY minute DESC
+      LIMIT 1
+    `).get();
+
+    // Earliest and latest red cards
+    const earliestRed = db.prepare(`
+      SELECT t.id as team_id, t.name, t.logo_url, MIN(CAST(me.minute AS INTEGER)) as minute
+      FROM match_events me
+      JOIN cached_fixtures f ON me.match_id = f.id
+      JOIN cached_teams t ON me.team_id = t.id
+      WHERE me.type = 'BOOKING' AND json_extract(me.additional_info, '$.card') IN ('RED', 'SECOND_YELLOW')
+      GROUP BY me.id
+      ORDER BY minute ASC
+      LIMIT 1
+    `).get();
+
+    const latestRed = db.prepare(`
+      SELECT t.id as team_id, t.name, t.logo_url, MAX(CAST(me.minute AS INTEGER)) as minute
+      FROM match_events me
+      JOIN cached_fixtures f ON me.match_id = f.id
+      JOIN cached_teams t ON me.team_id = t.id
+      WHERE me.type = 'BOOKING' AND json_extract(me.additional_info, '$.card') IN ('RED', 'SECOND_YELLOW')
+      GROUP BY me.id
+      ORDER BY minute DESC
+      LIMIT 1
+    `).get();
+
+    // Most goals in first half (minute <= 45)
+    const mostGoalsFirstHalf = db.prepare(`
+      SELECT t.id as team_id, t.name, t.logo_url, COUNT(*) as goals
+      FROM match_events me
+      JOIN cached_teams t ON me.team_id = t.id
+      WHERE me.type = 'GOAL' AND CAST(me.minute AS INTEGER) <= 45
+      GROUP BY me.team_id
+      ORDER BY goals DESC, t.name ASC
+      LIMIT 1
+    `).get();
+
+    // Most goals in second half (minute > 45)
+    const mostGoalsSecondHalf = db.prepare(`
+      SELECT t.id as team_id, t.name, t.logo_url, COUNT(*) as goals
+      FROM match_events me
+      JOIN cached_teams t ON me.team_id = t.id
+      WHERE me.type = 'GOAL' AND CAST(me.minute AS INTEGER) > 45
+      GROUP BY me.team_id
+      ORDER BY goals DESC, t.name ASC
+      LIMIT 1
+    `).get();
+
+    // Most goals in whole tournament
+    const mostGoalsTotal = db.prepare(`
+      SELECT t.id as team_id, t.name, t.logo_url, s.goals_for as goals
+      FROM cached_teams t
+      JOIN cached_standings s ON t.id = s.team_id
+      ORDER BY goals DESC, t.name ASC
+      LIMIT 1
+    `).get();
+
+    // Most clean sheets
+    const mostCleanSheets = db.prepare(`
+      SELECT t.id as team_id, t.name, t.logo_url, COUNT(*) as goals
+      FROM cached_fixtures f
+      JOIN cached_teams t ON (f.home_team_id = t.id OR f.away_team_id = t.id)
+      WHERE f.status = 'FT'
+        AND ((f.home_team_id = t.id AND f.away_score = 0) OR (f.away_team_id = t.id AND f.home_score = 0))
+      GROUP BY t.id
+      ORDER BY goals DESC, t.name ASC
+      LIMIT 1
+    `).get();
+
+    return res.json({
+      earliestGoal,
+      latestGoal,
+      earliestYellow,
+      latestYellow,
+      earliestRed,
+      latestRed,
+      mostGoalsFirstHalf,
+      mostGoalsSecondHalf,
+      mostGoalsTotal,
+      mostCleanSheets,
+    });
   }
 
   // Default: standings

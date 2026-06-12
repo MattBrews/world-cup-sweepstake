@@ -144,7 +144,7 @@ export default function DashboardPage() {
       {recentResults.length > 0 && (
         <div style={{ marginBottom: 20 }}>
           <h3 style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-text-muted)', marginBottom: 8 }}>
-            Recent Results
+            Latest Games
           </h3>
           <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
             {recentResults.map(f => (
