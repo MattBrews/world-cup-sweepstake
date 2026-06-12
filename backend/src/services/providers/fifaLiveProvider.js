@@ -55,9 +55,10 @@ export class FifaLiveProvider extends DataService {
     const db = getDb();
 
     const fixtures = db.prepare(
-      `SELECT id, api_match_id FROM cached_fixtures
+      `SELECT id, api_match_id, last_synced_at FROM cached_fixtures
        WHERE api_match_id IS NOT NULL
-         AND lifecycle_state IN ('FT', 'IN_PROGRESS', 'AWAITING')`
+         AND lifecycle_state = 'FT'
+         AND (last_synced_at IS NULL OR datetime(last_synced_at, '+30 minutes') < datetime('now'))`
     ).all();
 
     let updated = 0;
@@ -209,14 +210,27 @@ export class FifaLiveProvider extends DataService {
     const db = getDb();
 
     const fixtures = db.prepare(
-      `SELECT id, api_match_id, lifecycle_state FROM cached_fixtures
+      `SELECT id, api_match_id, lifecycle_state, last_synced_at FROM cached_fixtures
        WHERE api_match_id IS NOT NULL
          AND lifecycle_state IN ('AWAITING', 'IN_PROGRESS')`
     ).all();
 
+    const now = new Date();
+    const intervals = {
+      'AWAITING': 5 * 60 * 1000,
+      'IN_PROGRESS': 1 * 60 * 1000,
+    };
+
+    const needsUpdate = fixtures.filter(f => {
+      if (!f.last_synced_at) return true;
+      const lastSync = new Date(f.last_synced_at + 'Z');
+      const interval = intervals[f.lifecycle_state] || 5 * 60 * 1000;
+      return (now - lastSync) >= interval;
+    });
+
     let updated = 0;
 
-    for (const fixture of fixtures) {
+    for (const fixture of needsUpdate) {
       await delay(DELAY_MS);
 
       try {

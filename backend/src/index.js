@@ -7,7 +7,7 @@ import cron from 'node-cron';
 import { config } from './config.js';
 import { getDb } from './db/connection.js';
 import { runMigrations } from './db/schema.js';
-import { syncAll, fullRefresh, getSyncStatus } from './services/syncEngine.js';
+import { syncAll, syncLive, fullRefresh, getSyncStatus } from './services/syncEngine.js';
 
 import authRoutes from './routes/auth.js';
 import sweepstakesRoutes from './routes/sweepstakes.js';
@@ -75,17 +75,30 @@ app.get('*', (req, res) => {
 
 const dbPath = path.join(config.dataDir, 'sweepstakes.db');
 console.log(`Database: ${dbPath}`);
-console.log(`Sync interval: every ${config.syncIntervalMinutes} minutes`);
+console.log(`Full sync: every ${config.syncIntervalMinutes} minutes`);
+console.log(`Live sync: every 1 minute`);
 
 const intervalMin = config.syncIntervalMinutes;
-const cronExpr = intervalMin < 60 ? `*/${intervalMin} * * * *` : `0 */${Math.round(intervalMin / 60)} * * *`;
-cron.schedule(cronExpr, async () => {
-  console.log('[sync] Starting scheduled sync...');
+const fullSyncCron = intervalMin < 60 ? `*/${intervalMin} * * * *` : `0 */${Math.round(intervalMin / 60)} * * *`;
+
+cron.schedule(fullSyncCron, async () => {
+  console.log('[sync] Starting full sync...');
   try {
     const results = await syncAll();
-    console.log(`[sync] Complete: ${results.teams} teams, ${results.fixtures} fixtures, ${results.standings} standings`);
+    console.log(`[sync] Full sync complete: ${results.teams} teams, ${results.fixtures} fixtures`);
   } catch (err) {
-    console.error('[sync] Error:', err.message);
+    console.error('[sync] Full sync error:', err.message);
+  }
+});
+
+cron.schedule('* * * * *', async () => {
+  try {
+    const results = await syncLive();
+    if (results.liveUpdated > 0 || results.matchDetails > 0 || results.awaiting > 0) {
+      console.log(`[live] Updated: ${results.liveUpdated || 0} live, ${results.matchDetails || 0} details, ${results.awaiting || 0} awaiting`);
+    }
+  } catch (err) {
+    console.error('[live] Error:', err.message);
   }
 });
 

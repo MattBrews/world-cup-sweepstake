@@ -19,6 +19,61 @@ function logSync(endpoint, status, detail = '') {
   ).run(endpoint, `${status}${detail ? ': ' + detail : ''}`, 1);
 }
 
+export async function syncLive() {
+  const result = {};
+
+  try {
+    const db = getDb();
+    const now = new Date();
+    const { changes } = db.prepare(
+      "UPDATE cached_fixtures SET lifecycle_state = 'AWAITING' WHERE lifecycle_state = 'SCHEDULED' AND date < ?"
+    ).run(now.toISOString());
+    if (changes > 0) {
+      result.awaiting = changes;
+      logSync('awaiting-marker', 'info', `${changes} matches marked awaiting`);
+    }
+  } catch (err) {
+    logSync('awaiting-marker', 'error', err.message);
+  }
+
+  try {
+    const live = await fifaLive.syncLiveMatches();
+    result.liveUpdated = live.updated;
+    if (live.updated > 0) {
+      logSync('fifaLive', 'success', `${live.updated} live matches updated`);
+      const standingsCount = recalculateStandings();
+      result.standings = standingsCount;
+    }
+  } catch (err) {
+    logSync('fifaLive', 'error', err.message);
+  }
+
+  try {
+    const details = await fifaLive.syncMatchDetails();
+    result.matchDetails = details.matchesUpdated;
+    if (details.matchesUpdated > 0) {
+      logSync('fifaMatchDetails', 'success', `${details.matchesUpdated} matches, ${details.events} events`);
+      const standingsCount = recalculateStandings();
+      result.standings = standingsCount;
+    }
+  } catch (err) {
+    logSync('fifaMatchDetails', 'error', err.message);
+  }
+
+  const db = getDb();
+  const lifecycleCounts = db.prepare(`
+    SELECT lifecycle_state, COUNT(*) as count
+    FROM cached_fixtures
+    GROUP BY lifecycle_state
+  `).all();
+  result.lifecycle = {};
+  for (const row of lifecycleCounts) {
+    result.lifecycle[row.lifecycle_state] = row.count;
+  }
+
+  return result;
+}
+
 export async function syncAll() {
   const result = {};
 
@@ -69,20 +124,6 @@ export async function syncAll() {
   }
 
   try {
-    const live = await fifaLive.syncLiveMatches();
-    result.liveUpdated = live.updated;
-    logSync('fifaLive', 'success', `${live.updated} live matches updated`);
-
-    if (live.updated > 0) {
-      const standingsCount = recalculateStandings();
-      result.standings = standingsCount;
-      logSync('standings', 'recalculated', `${standingsCount} entries`);
-    }
-  } catch (err) {
-    logSync('fifaLive', 'error', err.message);
-  }
-
-  try {
     const tv = await fifaTv.syncTvChannels();
     result.tvChannels = tv.channelsUpdated;
     logSync('fifaTvSync', 'success', `${tv.channelsUpdated} channels`);
@@ -90,24 +131,8 @@ export async function syncAll() {
     logSync('fifaTvSync', 'error', err.message);
   }
 
-  try {
-    const details = await fifaLive.syncMatchDetails();
-    result.matchDetails = details.matchesUpdated;
-    logSync('fifaMatchDetails', 'success', `${details.matchesUpdated} matches, ${details.events} events`);
-  } catch (err) {
-    logSync('fifaMatchDetails', 'error', err.message);
-  }
-
-  const db = getDb();
-  const lifecycleCounts = db.prepare(`
-    SELECT lifecycle_state, COUNT(*) as count
-    FROM cached_fixtures
-    GROUP BY lifecycle_state
-  `).all();
-  result.lifecycle = {};
-  for (const row of lifecycleCounts) {
-    result.lifecycle[row.lifecycle_state] = row.count;
-  }
+  const liveResult = await syncLive();
+  Object.assign(result, liveResult);
 
   return result;
 }

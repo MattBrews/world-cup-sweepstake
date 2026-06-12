@@ -34,7 +34,7 @@ export class UpboundWebProvider extends DataService {
     const updateStmt = db.prepare(
       `UPDATE cached_fixtures
        SET home_score = ?, away_score = ?, home_ht_score = ?, away_ht_score = ?,
-           status = ?, lifecycle_state = ?, last_synced_at = datetime('now')
+           status = ?, lifecycle_state = ?
        WHERE id = ?`
     );
 
