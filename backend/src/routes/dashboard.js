@@ -118,6 +118,8 @@ router.get('/:ref/match-details/:matchId', (req, res) => {
   const fixture = db.prepare('SELECT * FROM cached_fixtures WHERE id = ?').get(req.params.matchId);
   if (!fixture) return res.status(404).json({ error: 'Match not found' });
 
+  const sweep = db.prepare('SELECT id FROM sweepstakes WHERE public_id = ?').get(req.params.ref);
+
   const events = db.prepare(
     'SELECT * FROM match_events WHERE match_id = ? ORDER BY period, id'
   ).all(req.params.matchId);
@@ -132,12 +134,17 @@ router.get('/:ref/match-details/:matchId', (req, res) => {
   const homeTeam = db.prepare('SELECT * FROM cached_teams WHERE id = ?').get(fixture.home_team_id);
   const awayTeam = db.prepare('SELECT * FROM cached_teams WHERE id = ?').get(fixture.away_team_id);
 
+  const participants = sweep
+    ? db.prepare('SELECT id, name, team_id, team_name FROM participants WHERE sweepstake_id = ?').all(sweep.id)
+    : [];
+
   res.json({
     fixture,
     homeTeam,
     awayTeam,
     events,
     lineups: { home: homeLineup, away: awayLineup },
+    participants,
   });
 });
 
