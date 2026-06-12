@@ -61,7 +61,7 @@ function buildRoundPositions(allFixtures) {
   return pos;
 }
 
-export default function MatchCard({ fixture, homeTeam, awayTeam, participants, teams, allFixtures }) {
+export default function MatchCard({ fixture, homeTeam, awayTeam, participants, teams, allFixtures, compact }) {
   const homeParticipant = participants.find(p => p.team_id === fixture.home_team_id);
   const awayParticipant = participants.find(p => p.team_id === fixture.away_team_id);
   const isFinished = fixture.status === 'FT';
@@ -84,24 +84,26 @@ export default function MatchCard({ fixture, homeTeam, awayTeam, participants, t
       padding: '14px 16px',
       borderLeft: `3px solid ${isLive ? 'var(--color-accent)' : isFinished ? 'var(--token-7)' : isAwaiting ? 'var(--token-4)' : 'rgba(255,255,255,0.1)'}`,
     }}>
-      <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginBottom: 6 }}>
-        {isLive ? (
-          <div>🔴 LIVE</div>
-        ) : isAwaiting ? (
-          <div style={{ color: 'var(--token-4)' }}>⏳ Awaiting result</div>
-        ) : (
-          <>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span>{dateStr}</span>
-              {tvLabel(fixture.tv_channel) && <span>{tvLabel(fixture.tv_channel)}</span>}
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span>{timeStr}</span>
-              {fixture.venue && <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '60%', textAlign: 'right' }} title={fixture.venue}>{fixture.venue}</span>}
-            </div>
-          </>
-        )}
-      </div>
+      {!compact && (
+        <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginBottom: 6 }}>
+          {isLive ? (
+            <div>🔴 LIVE</div>
+          ) : isAwaiting ? (
+            <div style={{ color: 'var(--token-4)' }}>⏳ Awaiting result</div>
+          ) : (
+            <>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span>{dateStr}</span>
+                {tvLabel(fixture.tv_channel) && <span>{tvLabel(fixture.tv_channel)}</span>}
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span>{timeStr}</span>
+                {fixture.venue && <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '60%', textAlign: 'right' }} title={fixture.venue}>{fixture.venue}</span>}
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <div style={{ flex: 1, textAlign: 'right', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6, minWidth: 0 }}>

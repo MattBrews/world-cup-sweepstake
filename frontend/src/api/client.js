@@ -31,6 +31,10 @@ export function getStandings(slug) {
   return request(`/sweepstakes/${slug}/standings`);
 }
 
+export function getRecentResults(slug) {
+  return request(`/sweepstakes/${slug}/recent-results`);
+}
+
 export function getRounds(slug) {
   return request(`/sweepstakes/${slug}/rounds`);
 }

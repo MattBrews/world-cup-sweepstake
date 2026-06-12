@@ -89,6 +89,21 @@ router.get('/:ref/standings', (req, res) => {
   res.json(standings);
 });
 
+router.get('/:ref/recent-results', (req, res) => {
+  const db = getDb();
+  const sweep = lookupSweep(req.params.ref);
+  if (!sweep) return res.status(404).json({ error: 'Not found' });
+
+  const fixtures = db.prepare(
+    "SELECT * FROM cached_fixtures WHERE status = 'FT' ORDER BY date DESC"
+  ).all();
+
+  const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const recent = fixtures.filter(f => new Date(f.date) >= cutoff);
+
+  res.json(recent);
+});
+
 router.get('/:ref/rounds', (req, res) => {
   const db = getDb();
   const rounds = db.prepare(

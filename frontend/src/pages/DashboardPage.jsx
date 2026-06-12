@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
-import { getDashboard } from '../api/client';
+import { getDashboard, getRecentResults } from '../api/client';
 import ProgressBar from '../components/ui/ProgressBar';
 import StageNav from '../components/ui/StageNav';
 import GroupCard from '../components/dashboard/GroupCard';
@@ -14,15 +14,13 @@ export default function DashboardPage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeStage, setActiveStage] = useState(null);
+  const [recentResults, setRecentResults] = useState([]);
 
   useEffect(() => {
-    getDashboard(publicId)
-      .then(d => {
-        setData(d);
-        setActiveStage(d.currentStage);
-      })
-      .catch(() => setData(null))
-      .finally(() => setLoading(false));
+    Promise.all([
+      getDashboard(publicId).then(d => { setData(d); setActiveStage(d.currentStage); }).catch(() => setData(null)),
+      getRecentResults(publicId).then(setRecentResults).catch(() => {}),
+    ]).finally(() => setLoading(false));
   }, [publicId]);
 
   if (loading) {
@@ -132,6 +130,29 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+
+      {recentResults.length > 0 && (
+        <div style={{ marginBottom: 20 }}>
+          <h3 style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-text-muted)', marginBottom: 8 }}>
+            Recent Results
+          </h3>
+          <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
+            {recentResults.map(f => (
+              <div key={f.id} style={{ width: 240, flexShrink: 0 }}>
+                <MatchCard
+                  fixture={f}
+                  homeTeam={teamMap[f.home_team_id]}
+                  awayTeam={teamMap[f.away_team_id]}
+                  participants={data.participants}
+                  teams={data.teams}
+                  allFixtures={data.fixtures}
+                  compact
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div style={{ marginBottom: 16 }}>
         <StageNav
