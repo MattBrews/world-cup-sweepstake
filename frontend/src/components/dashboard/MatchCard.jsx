@@ -82,16 +82,29 @@ export default function MatchCard({ fixture, homeTeam, awayTeam, participants, t
   return (
     <div
       className="glass"
-      onClick={onClick ? () => onClick(fixture.id) : undefined}
+      onClick={onClick && isFinished ? () => onClick(fixture.id) : undefined}
       style={{
         padding: '14px 16px',
         borderLeft: `3px solid ${isLive ? 'var(--color-accent)' : isFinished ? 'var(--token-7)' : isAwaiting ? 'var(--token-4)' : 'rgba(255,255,255,0.1)'}`,
-        cursor: onClick ? 'pointer' : undefined,
-        transition: onClick ? 'transform 0.15s, box-shadow 0.15s' : undefined,
+        cursor: onClick && isFinished ? 'pointer' : undefined,
+        transition: onClick && isFinished ? 'transform 0.15s, box-shadow 0.15s' : undefined,
+        position: 'relative',
       }}
-      onMouseEnter={onClick ? e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.3)'; } : undefined}
-      onMouseLeave={onClick ? e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = ''; } : undefined}
+      onMouseEnter={onClick && isFinished ? e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.3)'; } : undefined}
+      onMouseLeave={onClick && isFinished ? e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = ''; } : undefined}
     >
+      {onClick && isFinished && (
+        <div style={{
+          position: 'absolute',
+          top: 8,
+          right: 8,
+          fontSize: 10,
+          color: 'var(--color-text-muted)',
+          opacity: 0.6,
+        }}>
+          ⓘ
+        </div>
+      )}
       {!compact && (
         <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginBottom: 6 }}>
           {isLive ? (
