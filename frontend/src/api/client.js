@@ -97,6 +97,14 @@ export function triggerSync() {
   return request('/sync', { method: 'POST' });
 }
 
+export function triggerFullRefresh() {
+  return request('/sync/full', { method: 'POST' });
+}
+
+export function getSyncStatus() {
+  return request('/sync/status');
+}
+
 export function getMatchDetails(slug, matchId) {
   return request(`/sweepstakes/${slug}/match-details/${matchId}`);
 }

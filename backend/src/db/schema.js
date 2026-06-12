@@ -100,6 +100,10 @@ export function runMigrations() {
   try { db.exec("ALTER TABLE cached_fixtures ADD COLUMN attendance INTEGER"); } catch {}
   try { db.exec("ALTER TABLE cached_fixtures ADD COLUMN referee TEXT"); } catch {}
 
+  try { db.exec("ALTER TABLE cached_fixtures ADD COLUMN lifecycle_state TEXT DEFAULT 'SCHEDULED'"); } catch {}
+  try { db.exec("ALTER TABLE cached_fixtures ADD COLUMN last_synced_at TEXT"); } catch {}
+  try { db.exec("ALTER TABLE cached_fixtures ADD COLUMN data_sources TEXT"); } catch {}
+
   // Match events (timeline)
   db.exec(`
     CREATE TABLE IF NOT EXISTS match_events (

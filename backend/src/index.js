@@ -7,7 +7,7 @@ import cron from 'node-cron';
 import { config } from './config.js';
 import { getDb } from './db/connection.js';
 import { runMigrations } from './db/schema.js';
-import { syncAll } from './services/syncService.js';
+import { syncAll, fullRefresh, getSyncStatus } from './services/syncEngine.js';
 
 import authRoutes from './routes/auth.js';
 import sweepstakesRoutes from './routes/sweepstakes.js';
@@ -42,6 +42,24 @@ app.post('/api/sync', async (req, res) => {
   try {
     const results = await syncAll();
     res.json(results);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/sync/full', async (req, res) => {
+  try {
+    const results = await fullRefresh();
+    res.json(results);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/sync/status', (req, res) => {
+  try {
+    const status = getSyncStatus();
+    res.json(status);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

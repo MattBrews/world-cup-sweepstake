@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { getSweepstakes, createSweepstake, deleteSweepstake, getSession, logout, triggerSync, getConfig } from '../api/client';
+import { getSweepstakes, createSweepstake, deleteSweepstake, getSession, logout, triggerSync, triggerFullRefresh, getSyncStatus, getConfig } from '../api/client';
 
 export default function AdminDashboardPage() {
   const navigate = useNavigate();
   const [sweepstakes, setSweepstakes] = useState([]);
   const [session, setSession] = useState(null);
   const [config, setConfig] = useState(null);
+  const [syncStatus, setSyncStatus] = useState(null);
   const [showCreate, setShowCreate] = useState(false);
   const [createForm, setCreateForm] = useState({ name: '', slug: '', adminPassword: '' });
   const [error, setError] = useState('');
@@ -20,11 +21,12 @@ export default function AdminDashboardPage() {
           return;
         }
         setSession(s);
-        return Promise.all([getSweepstakes(), getConfig()]);
+        return Promise.all([getSweepstakes(), getConfig(), getSyncStatus()]);
       })
-      .then(([s, c]) => {
+      .then(([s, c, status]) => {
         setSweepstakes(s);
         setConfig(c);
+        setSyncStatus(status);
       })
       .catch(() => navigate('/admin'))
       .finally(() => setLoading(false));
@@ -47,9 +49,23 @@ export default function AdminDashboardPage() {
   const handleSync = async () => {
     try {
       await triggerSync();
+      const status = await getSyncStatus();
+      setSyncStatus(status);
       alert('Sync triggered!');
     } catch (err) {
       alert('Sync failed: ' + err.message);
+    }
+  };
+
+  const handleFullRefresh = async () => {
+    if (!window.confirm('Full refresh will re-fetch all data for all matches. This may take several minutes. Continue?')) return;
+    try {
+      await triggerFullRefresh();
+      const status = await getSyncStatus();
+      setSyncStatus(status);
+      alert('Full refresh complete!');
+    } catch (err) {
+      alert('Full refresh failed: ' + err.message);
     }
   };
 
@@ -75,6 +91,16 @@ export default function AdminDashboardPage() {
           }}>
             Sync Now
           </button>
+          <button onClick={handleFullRefresh} style={{
+            padding: '8px 16px',
+            borderRadius: 8,
+            background: 'rgba(255,165,0,0.15)',
+            fontSize: 13,
+            fontWeight: 600,
+            border: '1px solid rgba(255,165,0,0.2)',
+          }}>
+            Full Refresh
+          </button>
           <button onClick={handleLogout} style={{
             padding: '8px 16px',
             borderRadius: 8,
@@ -96,6 +122,28 @@ export default function AdminDashboardPage() {
           </div>
         )) || 'Loading...'}
       </div>
+
+      {syncStatus && (
+        <div className="glass" style={{ padding: 16, marginBottom: 24, fontSize: 13 }}>
+          <div style={{ fontWeight: 700, marginBottom: 8, color: 'var(--color-text)' }}>Match sync status</div>
+          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+            {Object.entries(syncStatus).map(([state, count]) => (
+              <div key={state} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{
+                  width: 8, height: 8, borderRadius: '50%',
+                  background: state === 'COMPLETE' ? '#48bb78' :
+                              state === 'FT' ? '#4299e1' :
+                              state === 'IN_PROGRESS' ? '#ed8936' :
+                              state === 'AWAITING' ? '#ecc94b' : '#a0aec0',
+                }} />
+                <span style={{ color: 'var(--color-text-muted)' }}>
+                  {state}: <strong style={{ color: 'var(--color-text)' }}>{count}</strong>
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <button
         onClick={() => setShowCreate(!showCreate)}
