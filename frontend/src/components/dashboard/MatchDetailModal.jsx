@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { getMatchDetails } from '../../api/client';
 
 const TABS = ['Timeline', 'Line-ups', 'Bookings'];
@@ -21,6 +21,7 @@ function formatDate(iso) {
 function goalTypeLabel(t) {
   if (t === 0) return '';
   if (t === 1) return ' (pen)';
+  if (t === 3) return ' (OG)';
   if (t === 5) return ' (direct)';
   return '';
 }
@@ -258,32 +259,44 @@ function TimelineTab({ events, homeTeamId, awayTeamId, homeTeam, awayTeam }) {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        {allMinutes.map(minute => {
+        {allMinutes.map((minute, idx) => {
+          const prevMinute = idx > 0 ? allMinutes[idx - 1] : null;
+          const showHalftime = prevMinute !== null && prevMinute <= 45 && minute > 45;
+
           const minuteEvents = validEvents.filter(e => parseMinute(e.minute) === minute).sort((a, b) => (a.id || 0) - (b.id || 0));
           const homeMinEvents = minuteEvents.filter(e => parseInt(e.team_id) === parseInt(homeTeamId));
           const awayMinEvents = minuteEvents.filter(e => parseInt(e.team_id) === parseInt(awayTeamId));
           const neutralMinEvents = minuteEvents.filter(e => !e.team_id || (parseInt(e.team_id) !== parseInt(homeTeamId) && parseInt(e.team_id) !== parseInt(awayTeamId)));
 
           return (
-            <div key={minute} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
-                {homeMinEvents.map((e, i) => (
-                  <div key={e.id || i} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, padding: '4px 8px', borderRadius: 6, background: 'rgba(255,255,255,0.02)' }}>
-                    {renderEventContent(e, 'home')}
-                  </div>
-                ))}
+            <React.Fragment key={minute}>
+              {showHalftime && (
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '8px 0' }}>
+                  <div style={{ flex: 1, height: 1, background: 'var(--color-text-muted)', opacity: 0.3 }} />
+                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', letterSpacing: 1, textTransform: 'uppercase' }}>Half Time</div>
+                  <div style={{ flex: 1, height: 1, background: 'var(--color-text-muted)', opacity: 0.3 }} />
+                </div>
+              )}
+              <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
+                  {homeMinEvents.map((e, i) => (
+                    <div key={e.id || i} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, padding: '4px 8px', borderRadius: 6, background: 'rgba(255,255,255,0.02)' }}>
+                      {renderEventContent(e, 'home')}
+                    </div>
+                  ))}
+                </div>
+                <div style={{ width: 40, textAlign: 'center', fontWeight: 700, color: 'var(--color-text-muted)', fontSize: 12, paddingTop: 4, flexShrink: 0 }}>
+                  {formatMinute(minute)}
+                </div>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2 }}>
+                  {awayMinEvents.map((e, i) => (
+                    <div key={e.id || i} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, padding: '4px 8px', borderRadius: 6, background: 'rgba(255,255,255,0.02)' }}>
+                      {renderEventContent(e, 'away')}
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div style={{ width: 40, textAlign: 'center', fontWeight: 700, color: 'var(--color-text-muted)', fontSize: 12, paddingTop: 4, flexShrink: 0 }}>
-                {formatMinute(minute)}
-              </div>
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2 }}>
-                {awayMinEvents.map((e, i) => (
-                  <div key={e.id || i} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, padding: '4px 8px', borderRadius: 6, background: 'rgba(255,255,255,0.02)' }}>
-                    {renderEventContent(e, 'away')}
-                  </div>
-                ))}
-              </div>
-            </div>
+            </React.Fragment>
           );
         })}
         {neutralEvents.length > 0 && (

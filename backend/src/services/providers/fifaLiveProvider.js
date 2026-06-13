@@ -30,6 +30,13 @@ function findPlayerName(data, teamId, playerId) {
     const player = (team.Players || []).find(p => parseInt(p.IdPlayer) === parseInt(playerId));
     if (player) return player.PlayerName?.[0]?.Description || player.ShortName?.[0]?.Description || null;
   }
+  // Fallback: search both rosters (handles own goals where player is on opposing team)
+  for (const side of ['HomeTeam', 'AwayTeam']) {
+    const team = data[side];
+    if (!team) continue;
+    const player = (team.Players || []).find(p => parseInt(p.IdPlayer) === parseInt(playerId));
+    if (player) return player.PlayerName?.[0]?.Description || player.ShortName?.[0]?.Description || null;
+  }
   return null;
 }
 
@@ -365,6 +372,7 @@ export class FifaLiveProvider extends DataService {
       SELECT player_name, team_id, COUNT(*) as goal_count
       FROM match_events
       WHERE type = 'GOAL' AND player_name IS NOT NULL
+        AND (json_extract(additional_info, '$.goalType') IS NULL OR json_extract(additional_info, '$.goalType') != 3)
       GROUP BY player_name, team_id
     `).all();
 

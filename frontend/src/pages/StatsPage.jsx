@@ -601,7 +601,7 @@ function RecordsView({ stats, participants }) {
     </div>
   );
 
-  const RecordRow = ({ label, record, showMinute = true, showGoals = false, isPlayer = false }) => {
+  const RecordRow = ({ label, record, showMinute = true, showGoals = false, showGoalsKey = 'goals', isPlayer = false }) => {
     if (!record) return null;
     const participant = getParticipant(record.team_id);
     
@@ -657,9 +657,9 @@ function RecordsView({ stats, participants }) {
             {record.minute > 90 ? `90+${record.minute - 90}'` : `${record.minute}'`}
           </div>
         )}
-        {showGoals && record.goals != null && (
+        {showGoals && record[showGoalsKey] != null && (
           <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--color-accent)', flexShrink: 0, marginLeft: 10, minWidth: 24, textAlign: 'right' }}>
-            {record.goals}
+            {record[showGoalsKey]}
           </div>
         )}
       </div>
@@ -667,32 +667,30 @@ function RecordsView({ stats, participants }) {
   };
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, alignItems: 'start' }}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-        <RecordCard label="Teams">
-          <RecordRow label="Earliest Goal" record={stats.earliestGoal} showMinute={true} />
-          <RecordRow label="Latest Goal" record={stats.latestGoal} showMinute={true} />
-          <RecordRow label="Most Goals (Single Game)" record={stats.mostGoalsSingleGame} showGoals={true} />
-          <RecordRow label="Most Goals (1st Half)" record={stats.mostGoalsFirstHalf} showGoals={true} />
-          <RecordRow label="Most Goals (2nd Half)" record={stats.mostGoalsSecondHalf} showGoals={true} />
-          <RecordRow label="Most Clean Sheets" record={stats.mostCleanSheets} showGoals={true} />
-        </RecordCard>
-      </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <RecordCard label="Teams">
+        <RecordRow label="Earliest Goal" record={stats.earliestGoal} showMinute={true} />
+        <RecordRow label="Latest Goal" record={stats.latestGoal} showMinute={true} />
+        <RecordRow label="Most Goals (Single Game)" record={stats.mostGoalsSingleGame} showGoals={true} />
+        <RecordRow label="Most Goals (1st Half)" record={stats.mostGoalsFirstHalf} showGoals={true} />
+        <RecordRow label="Most Goals (2nd Half)" record={stats.mostGoalsSecondHalf} showGoals={true} />
+        <RecordRow label="Most Clean Sheets" record={stats.mostCleanSheets} showGoals={true} />
+        <RecordRow label="Most Own Goals" record={stats.mostOwnGoalsTeam} showGoals={true} showGoalsKey="own_goals" />
+      </RecordCard>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-        <RecordCard label="Players">
-          <RecordRow label="Most Goals (Single Game)" record={stats.mostPlayerGoalsSingleGame} showGoals={true} isPlayer={true} />
-          <RecordRow label="Most Goals (1st Half)" record={stats.mostPlayerGoalsFirstHalf} showGoals={true} isPlayer={true} />
-          <RecordRow label="Most Goals (2nd Half)" record={stats.mostPlayerGoalsSecondHalf} showGoals={true} isPlayer={true} />
-        </RecordCard>
+      <RecordCard label="Players">
+        <RecordRow label="Most Goals (Single Game)" record={stats.mostPlayerGoalsSingleGame} showGoals={true} isPlayer={true} />
+        <RecordRow label="Most Goals (1st Half)" record={stats.mostPlayerGoalsFirstHalf} showGoals={true} isPlayer={true} />
+        <RecordRow label="Most Goals (2nd Half)" record={stats.mostPlayerGoalsSecondHalf} showGoals={true} isPlayer={true} />
+        <RecordRow label="Most Own Goals" record={stats.mostOwnGoalsPlayer} showGoals={true} showGoalsKey="own_goals" isPlayer={true} />
+      </RecordCard>
 
-        <RecordCard label="Cards">
-          <RecordRow label="Earliest Yellow Card" record={stats.earliestYellow} showMinute={true} />
-          <RecordRow label="Latest Yellow Card" record={stats.latestYellow} showMinute={true} />
-          <RecordRow label="Earliest Red Card" record={stats.earliestRed} showMinute={true} />
-          <RecordRow label="Latest Red Card" record={stats.latestRed} showMinute={true} />
-        </RecordCard>
-      </div>
+      <RecordCard label="Cards">
+        <RecordRow label="Earliest Yellow Card" record={stats.earliestYellow} showMinute={true} />
+        <RecordRow label="Latest Yellow Card" record={stats.latestYellow} showMinute={true} />
+        <RecordRow label="Earliest Red Card" record={stats.earliestRed} showMinute={true} />
+        <RecordRow label="Latest Red Card" record={stats.latestRed} showMinute={true} />
+      </RecordCard>
     </div>
   );
 }
