@@ -19,9 +19,16 @@ export default function StatsPage() {
   const [stats, setStats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statsLoading, setStatsLoading] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 600);
 
   const activeTab = searchParams.get('tab') || 'standings';
   const view = searchParams.get('group') || 'team';
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 600);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   function setTab(tab) {
     const params = { tab };
@@ -100,25 +107,50 @@ export default function StatsPage() {
         Leaderboard
       </h1>
 
-      <div style={{ marginBottom: 12, display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-        {STAT_TABS.map(tab => (
-          <button
-            key={tab.key}
-            onClick={() => setTab(tab.key)}
-            style={{
-              padding: '6px 16px',
-              borderRadius: 20,
-              fontSize: 13,
-              fontWeight: 600,
-              background: activeTab === tab.key ? 'var(--gradient-accent)' : 'rgba(255,255,255,0.04)',
-              color: activeTab === tab.key ? '#fff' : 'var(--color-text)',
-              border: '1px solid rgba(255,255,255,0.06)',
-            }}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      {isMobile ? (
+        <select
+          value={activeTab}
+          onChange={e => setTab(e.target.value)}
+          style={{
+            width: '100%',
+            padding: '10px 14px',
+            borderRadius: 8,
+            border: '1px solid rgba(255,255,255,0.08)',
+            background: 'rgba(255,255,255,0.04)',
+            color: '#fff',
+            fontSize: 14,
+            fontWeight: 600,
+            outline: 'none',
+            marginBottom: 12,
+          }}
+        >
+          {STAT_TABS.map(tab => (
+            <option key={tab.key} value={tab.key} style={{ background: '#0b111e' }}>
+              {tab.label}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <div style={{ marginBottom: 12, display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+          {STAT_TABS.map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => setTab(tab.key)}
+              style={{
+                padding: '6px 16px',
+                borderRadius: 20,
+                fontSize: 13,
+                fontWeight: 600,
+                background: activeTab === tab.key ? 'var(--gradient-accent)' : 'rgba(255,255,255,0.04)',
+                color: activeTab === tab.key ? '#fff' : 'var(--color-text)',
+                border: '1px solid rgba(255,255,255,0.06)',
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {!noToggle && (
         <div style={{ marginBottom: 20 }}>
@@ -194,7 +226,9 @@ function TableRow({ item, i, columns, renderValue, subdued }) {
         gap: 4,
         padding: subdued ? '8px 12px' : '10px 12px',
         fontSize: subdued ? 12 : 14,
-        background: i % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent',
+        background: subdued
+          ? (i % 2 === 0 ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.10)')
+          : (i % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent'),
         alignItems: 'center',
       }}
     >
@@ -259,7 +293,7 @@ function PersonGroup({ person, columns, renderAggValue, renderTeamValue, rowStar
         alt={index % 2 === 1}
       />
       {expanded && person.teams.map((t, ti) => (
-        <TableRow key={ti} item={t} i={rowStart + ti} columns={columns} renderValue={renderTeamValue} subdued />
+        <TableRow key={ti} item={t} i={ti} columns={columns} renderValue={renderTeamValue} subdued />
       ))}
     </div>
   );
@@ -314,7 +348,7 @@ function StandingsView({ stats, teamMap, participants, view }) {
     };
   });
 
-  const cols = '32px 32px 32px 32px 32px 36px';
+  const cols = '32px 32px 32px 32px 32px';
 
   if (view === 'person') {
     const people = groupByPerson(teamStats, participants);
@@ -331,7 +365,7 @@ function StandingsView({ stats, teamMap, participants, view }) {
     let nextRow = 0;
     return (
       <div className="glass" style={{ overflowX: 'auto' }}>
-        <TableHeader columns={cols} labels={['Pts', 'Pld', 'W', 'D', 'L', 'GD']} />
+        <TableHeader columns={cols} labels={['Pts', 'Pld', 'W', 'D', 'L']} />
         {ranked.length === 0 ? <Empty /> : ranked.map((person, idx) => {
           const start = nextRow;
           nextRow += person.teams.length;
@@ -343,10 +377,10 @@ function StandingsView({ stats, teamMap, participants, view }) {
               columns={cols}
               rowStart={start}
               renderAggValue={item => <>
-                {renderCell(item.totalPoints)}{renderCell(item.totalPlayed)}{renderCell(item.totalWin)}{renderCell(item.totalDraw)}{renderCell(item.totalLose)}{renderCell(item.totalGD, { colored: true })}
+                {renderCell(item.totalPoints)}{renderCell(item.totalPlayed)}{renderCell(item.totalWin)}{renderCell(item.totalDraw)}{renderCell(item.totalLose)}
               </>}
               renderTeamValue={item => <>
-                {renderCell(item.points, { weight: 400 })}{renderCell(item.played, { weight: 400 })}{renderCell(item.win, { weight: 400 })}{renderCell(item.draw, { weight: 400 })}{renderCell(item.lose, { weight: 400 })}{renderCell(item.goal_diff, { colored: true, weight: 400 })}
+                {renderCell(item.points, { weight: 400 })}{renderCell(item.played, { weight: 400 })}{renderCell(item.win, { weight: 400 })}{renderCell(item.draw, { weight: 400 })}{renderCell(item.lose, { weight: 400 })}
               </>}
             />
           );
@@ -355,12 +389,14 @@ function StandingsView({ stats, teamMap, participants, view }) {
     );
   }
 
+  const sortedTeamStats = [...teamStats].sort((a, b) => b.points - a.points || b.goal_diff - a.goal_diff || b.goals_for - a.goals_for);
+
   return (
     <div className="glass" style={{ overflowX: 'auto' }}>
-      <TableHeader columns={cols} labels={['Pts', 'Pld', 'W', 'D', 'L', 'GD']} />
-      {teamStats.length === 0 ? <Empty /> : teamStats.map((t, i) => (
+      <TableHeader columns={cols} labels={['Pts', 'Pld', 'W', 'D', 'L']} />
+      {sortedTeamStats.length === 0 ? <Empty /> : sortedTeamStats.map((t, i) => (
         <TableRow key={t.team_id} item={t} i={i} columns={cols} renderValue={item => <>
-          {renderCell(item.points)}{renderCell(item.played)}{renderCell(item.win)}{renderCell(item.draw)}{renderCell(item.lose)}{renderCell(item.goal_diff, { colored: true })}
+          {renderCell(item.points)}{renderCell(item.played)}{renderCell(item.win)}{renderCell(item.draw)}{renderCell(item.lose)}
         </>} />
       ))}
     </div>
@@ -415,10 +451,12 @@ function CardsView({ stats, teamMap, participants, view }) {
     );
   }
 
+  const sortedCardStats = [...cardStats].sort((a, b) => b.total - a.total || a.name.localeCompare(b.name));
+
   return (
     <div className="glass" style={{ overflowX: 'auto' }}>
       <TableHeader columns={cols} labels={['🟨', '🟥', 'Tot']} />
-      {cardStats.length === 0 ? <Empty /> : cardStats.map((t, i) => (
+      {sortedCardStats.length === 0 ? <Empty /> : sortedCardStats.map((t, i) => (
         <TableRow key={t.team_id} item={t} i={i} columns={cols} renderValue={item => <><span style={{ textAlign: 'center' }}>{item.yellow}</span><span style={{ textAlign: 'center' }}>{item.red}</span><span style={{ textAlign: 'center', fontWeight: 700 }}>{item.total}</span></>} />
       ))}
     </div>
@@ -473,10 +511,12 @@ function GoalsView({ stats, teamMap, participants, view }) {
     );
   }
 
+  const sortedGoalsStats = [...goalsStats].sort((a, b) => b.gf - a.gf || a.name.localeCompare(b.name));
+
   return (
     <div className="glass" style={{ overflowX: 'auto' }}>
       <TableHeader columns={cols} labels={['GF', 'GA', 'GD']} />
-      {goalsStats.length === 0 ? <Empty /> : goalsStats.map((t, i) => (
+      {sortedGoalsStats.length === 0 ? <Empty /> : sortedGoalsStats.map((t, i) => (
         <TableRow key={t.team_id} item={t} i={i} columns={cols} renderValue={item => <>{renderCell(item.gf)}{renderCell(item.ga)}{renderCell(item.gd, { colored: true })}</>} />
       ))}
     </div>
@@ -583,7 +623,7 @@ function RecordsView({ stats, participants }) {
         </div>
         {showMinute && record.minute != null && (
           <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-accent)', flexShrink: 0, marginLeft: 12 }}>
-            {record.minute}'
+            {record.minute > 90 ? `90+${record.minute - 90}'` : `${record.minute}'`}
           </div>
         )}
         {showGoals && record.goals != null && (

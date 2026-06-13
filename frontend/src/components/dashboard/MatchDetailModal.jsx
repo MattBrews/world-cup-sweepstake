@@ -211,9 +211,19 @@ export default function MatchDetailModal({ publicId, matchId, onClose }) {
 
 function parseMinute(minute) {
   if (!minute) return null;
-  // Extract numeric part from strings like "9'", "67'", "90'+2'"
-  const match = String(minute).match(/^(\d+)/);
-  return match ? parseInt(match[1]) : null;
+  const str = String(minute);
+  const match = str.match(/^(\d+)'?(?:\+(\d+))?/);
+  if (!match) return null;
+  const base = parseInt(match[1]);
+  const stoppage = match[2] ? parseInt(match[2]) : 0;
+  return base + stoppage;
+}
+
+function formatMinute(minute) {
+  if (minute > 90) {
+    return `90+${minute - 90}'`;
+  }
+  return `${minute}'`;
 }
 
 function TimelineTab({ events, homeTeamId, awayTeamId, homeTeam, awayTeam }) {
@@ -256,7 +266,7 @@ function TimelineTab({ events, homeTeamId, awayTeamId, homeTeam, awayTeam }) {
                 ))}
               </div>
               <div style={{ width: 40, textAlign: 'center', fontWeight: 700, color: 'var(--color-text-muted)', fontSize: 12, paddingTop: 4, flexShrink: 0 }}>
-                {minute}'
+                {formatMinute(minute)}
               </div>
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2 }}>
                 {awayMinEvents.map((e, i) => (
@@ -273,7 +283,7 @@ function TimelineTab({ events, homeTeamId, awayTeamId, homeTeam, awayTeam }) {
             <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-text-muted)', marginBottom: 4 }}>Other</div>
             {neutralEvents.sort((a, b) => (a.id || 0) - (b.id || 0)).map((e, i) => (
               <div key={e.id || i} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, padding: '2px 0' }}>
-                <span style={{ width: 30, fontWeight: 700, color: 'var(--color-text-muted)' }}>{e.minute}'</span>
+                <span style={{ width: 30, fontWeight: 700, color: 'var(--color-text-muted)' }}>{formatMinute(parseMinute(e.minute))}</span>
                 {renderEventContent(e, 'neutral')}
               </div>
             ))}
@@ -482,7 +492,7 @@ function BookingsTab({ events, homeTeamId, awayTeamId, homeTeam, awayTeam }) {
             width: 12, height: 16, borderRadius: 2, flexShrink: 0,
             background: cardType === 'red' ? '#E53E3E' : cardType === 'secondYellow' ? 'linear-gradient(to right, #EAA623 50%, #E53E3E 50%)' : '#EAA623',
           }} />
-          <span style={{ fontWeight: 600, color: 'var(--color-text-muted)', minWidth: 35 }}>{b.minute}</span>
+          <span style={{ fontWeight: 600, color: 'var(--color-text-muted)', minWidth: 35 }}>{formatMinute(parseMinute(b.minute))}</span>
           <span style={{ flex: 1 }}>{b.player_name}</span>
         </div>
       );

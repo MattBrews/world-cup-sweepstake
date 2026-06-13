@@ -202,9 +202,11 @@ router.get('/:ref/stats', (req, res) => {
   }
 
   if (type === 'records') {
+    const minuteExpr = `CAST(me.minute AS INTEGER) + CASE WHEN INSTR(me.minute, '+') > 0 THEN CAST(SUBSTR(me.minute, INSTR(me.minute, '+') + 1) AS INTEGER) ELSE 0 END`;
+
     // Earliest and latest goals
     const earliestGoal = db.prepare(`
-      SELECT t.id as team_id, t.name, t.logo_url, MIN(CAST(me.minute AS INTEGER)) as minute
+      SELECT t.id as team_id, t.name, t.logo_url, MIN(${minuteExpr}) as minute
       FROM match_events me
       JOIN cached_fixtures f ON me.match_id = f.id
       JOIN cached_teams t ON me.team_id = t.id
@@ -215,7 +217,7 @@ router.get('/:ref/stats', (req, res) => {
     `).get();
 
     const latestGoal = db.prepare(`
-      SELECT t.id as team_id, t.name, t.logo_url, MAX(CAST(me.minute AS INTEGER)) as minute
+      SELECT t.id as team_id, t.name, t.logo_url, MAX(${minuteExpr}) as minute
       FROM match_events me
       JOIN cached_fixtures f ON me.match_id = f.id
       JOIN cached_teams t ON me.team_id = t.id
@@ -227,7 +229,7 @@ router.get('/:ref/stats', (req, res) => {
 
     // Earliest and latest yellow cards
     const earliestYellow = db.prepare(`
-      SELECT t.id as team_id, t.name, t.logo_url, MIN(CAST(me.minute AS INTEGER)) as minute
+      SELECT t.id as team_id, t.name, t.logo_url, MIN(${minuteExpr}) as minute
       FROM match_events me
       JOIN cached_fixtures f ON me.match_id = f.id
       JOIN cached_teams t ON me.team_id = t.id
@@ -238,7 +240,7 @@ router.get('/:ref/stats', (req, res) => {
     `).get();
 
     const latestYellow = db.prepare(`
-      SELECT t.id as team_id, t.name, t.logo_url, MAX(CAST(me.minute AS INTEGER)) as minute
+      SELECT t.id as team_id, t.name, t.logo_url, MAX(${minuteExpr}) as minute
       FROM match_events me
       JOIN cached_fixtures f ON me.match_id = f.id
       JOIN cached_teams t ON me.team_id = t.id
@@ -250,7 +252,7 @@ router.get('/:ref/stats', (req, res) => {
 
     // Earliest and latest red cards
     const earliestRed = db.prepare(`
-      SELECT t.id as team_id, t.name, t.logo_url, MIN(CAST(me.minute AS INTEGER)) as minute
+      SELECT t.id as team_id, t.name, t.logo_url, MIN(${minuteExpr}) as minute
       FROM match_events me
       JOIN cached_fixtures f ON me.match_id = f.id
       JOIN cached_teams t ON me.team_id = t.id
@@ -261,7 +263,7 @@ router.get('/:ref/stats', (req, res) => {
     `).get();
 
     const latestRed = db.prepare(`
-      SELECT t.id as team_id, t.name, t.logo_url, MAX(CAST(me.minute AS INTEGER)) as minute
+      SELECT t.id as team_id, t.name, t.logo_url, MAX(${minuteExpr}) as minute
       FROM match_events me
       JOIN cached_fixtures f ON me.match_id = f.id
       JOIN cached_teams t ON me.team_id = t.id
@@ -276,7 +278,7 @@ router.get('/:ref/stats', (req, res) => {
       SELECT t.id as team_id, t.name, t.logo_url, COUNT(*) as goals
       FROM match_events me
       JOIN cached_teams t ON me.team_id = t.id
-      WHERE me.type = 'GOAL' AND CAST(me.minute AS INTEGER) <= 45
+      WHERE me.type = 'GOAL' AND ${minuteExpr} <= 45
       GROUP BY me.team_id
       ORDER BY goals DESC, t.name ASC
       LIMIT 1
@@ -287,7 +289,7 @@ router.get('/:ref/stats', (req, res) => {
       SELECT t.id as team_id, t.name, t.logo_url, COUNT(*) as goals
       FROM match_events me
       JOIN cached_teams t ON me.team_id = t.id
-      WHERE me.type = 'GOAL' AND CAST(me.minute AS INTEGER) > 45
+      WHERE me.type = 'GOAL' AND ${minuteExpr} > 45
       GROUP BY me.team_id
       ORDER BY goals DESC, t.name ASC
       LIMIT 1
