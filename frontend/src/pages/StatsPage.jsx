@@ -590,31 +590,41 @@ function RecordsView({ stats, participants }) {
     return participants.find(p => p.team_id === teamId);
   };
 
-  const RecordRow = ({ label, record, showMinute = true, showGoals = false }) => {
+  const RecordCard = ({ children, label }) => (
+    <div>
+      <h3 style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-accent)', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        {label}
+      </h3>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        {children}
+      </div>
+    </div>
+  );
+
+  const RecordRow = ({ label, record, showMinute = true, showGoals = false, isPlayer = false }) => {
     if (!record) return null;
-    const participant = getParticipant(record.team_id);
+    const participant = !isPlayer ? getParticipant(record.team_id) : null;
     
     return (
       <div style={{
         display: 'flex',
         alignItems: 'center',
-        padding: '12px 16px',
+        padding: '10px 14px',
         background: 'rgba(255,255,255,0.02)',
         borderRadius: 8,
-        marginBottom: 8,
       }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
+          <div style={{ fontSize: 10, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 3 }}>
             {label}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            {record.logo_url && <img src={record.logo_url} alt="" style={{ width: 20, height: 20, flexShrink: 0 }} />}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            {record.logo_url && <img src={record.logo_url} alt="" style={{ width: 16, height: 16, flexShrink: 0 }} />}
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontWeight: 600, fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {record.name || record.team_name}
+              <div style={{ fontWeight: 600, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {isPlayer ? record.player_name : (record.name || record.team_name)}
               </div>
               {participant && (
-                <div style={{ fontSize: 11, color: 'var(--color-accent)', fontWeight: 500 }}>
+                <div style={{ fontSize: 10, color: 'var(--color-accent)', fontWeight: 500 }}>
                   {participant.name}
                 </div>
               )}
@@ -622,12 +632,12 @@ function RecordsView({ stats, participants }) {
           </div>
         </div>
         {showMinute && record.minute != null && (
-          <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-accent)', flexShrink: 0, marginLeft: 12 }}>
+          <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--color-accent)', flexShrink: 0, marginLeft: 10 }}>
             {record.minute > 90 ? `90+${record.minute - 90}'` : `${record.minute}'`}
           </div>
         )}
         {showGoals && record.goals != null && (
-          <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-accent)', flexShrink: 0, marginLeft: 12 }}>
+          <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--color-accent)', flexShrink: 0, marginLeft: 10, minWidth: 24, textAlign: 'right' }}>
             {record.goals}
           </div>
         )}
@@ -636,27 +646,29 @@ function RecordsView({ stats, participants }) {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div>
-        <h3 style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-accent)', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-          Goals
-        </h3>
-        <RecordRow label="Earliest Goal" record={stats.earliestGoal} showMinute={true} />
-        <RecordRow label="Latest Goal" record={stats.latestGoal} showMinute={true} />
-        <RecordRow label="Most Goals (Tournament)" record={stats.mostGoalsTotal} showGoals={true} />
-        <RecordRow label="Most Goals (1st Half)" record={stats.mostGoalsFirstHalf} showGoals={true} />
-        <RecordRow label="Most Goals (2nd Half)" record={stats.mostGoalsSecondHalf} showGoals={true} />
-        <RecordRow label="Most Clean Sheets" record={stats.mostCleanSheets} showGoals={true} />
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, alignItems: 'start' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <RecordCard label="Teams">
+          <RecordRow label="Earliest Goal" record={stats.earliestGoal} showMinute={true} />
+          <RecordRow label="Latest Goal" record={stats.latestGoal} showMinute={true} />
+          <RecordRow label="Most Goals (Single Game)" record={stats.mostGoalsSingleGame} showGoals={true} />
+          <RecordRow label="Most Goals (1st Half)" record={stats.mostGoalsFirstHalf} showGoals={true} />
+          <RecordRow label="Most Goals (2nd Half)" record={stats.mostGoalsSecondHalf} showGoals={true} />
+          <RecordRow label="Most Clean Sheets" record={stats.mostCleanSheets} showGoals={true} />
+        </RecordCard>
       </div>
 
-      <div>
-        <h3 style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-accent)', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-          Cards
-        </h3>
-        <RecordRow label="Earliest Yellow Card" record={stats.earliestYellow} showMinute={true} />
-        <RecordRow label="Latest Yellow Card" record={stats.latestYellow} showMinute={true} />
-        <RecordRow label="Earliest Red Card" record={stats.earliestRed} showMinute={true} />
-        <RecordRow label="Latest Red Card" record={stats.latestRed} showMinute={true} />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <RecordCard label="Players">
+          <RecordRow label="Most Goals (Single Game)" record={stats.mostPlayerGoalsSingleGame} showGoals={true} isPlayer={true} />
+        </RecordCard>
+
+        <RecordCard label="Cards">
+          <RecordRow label="Earliest Yellow Card" record={stats.earliestYellow} showMinute={true} />
+          <RecordRow label="Latest Yellow Card" record={stats.latestYellow} showMinute={true} />
+          <RecordRow label="Earliest Red Card" record={stats.earliestRed} showMinute={true} />
+          <RecordRow label="Latest Red Card" record={stats.latestRed} showMinute={true} />
+        </RecordCard>
       </div>
     </div>
   );

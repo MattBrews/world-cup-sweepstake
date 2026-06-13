@@ -295,12 +295,28 @@ router.get('/:ref/stats', (req, res) => {
       LIMIT 1
     `).get();
 
-    // Most goals in whole tournament
-    const mostGoalsTotal = db.prepare(`
-      SELECT t.id as team_id, t.name, t.logo_url, s.goals_for as goals
-      FROM cached_teams t
-      JOIN cached_standings s ON t.id = s.team_id
+    // Most goals by a team in a single match
+    const mostGoalsSingleGame = db.prepare(`
+      SELECT t.id as team_id, t.name, t.logo_url, MAX(goals) as goals
+      FROM (
+        SELECT f.home_team_id as team_id, f.home_score as goals FROM cached_fixtures f WHERE f.status = 'FT' AND f.home_score IS NOT NULL
+        UNION ALL
+        SELECT f.away_team_id as team_id, f.away_score as goals FROM cached_fixtures f WHERE f.status = 'FT' AND f.away_score IS NOT NULL
+      ) team_scores
+      JOIN cached_teams t ON t.id = team_scores.team_id
+      GROUP BY t.id
       ORDER BY goals DESC, t.name ASC
+      LIMIT 1
+    `).get();
+
+    // Most goals by a player in a single match
+    const mostPlayerGoalsSingleGame = db.prepare(`
+      SELECT me.player_name, me.team_id, t.name as team_name, t.logo_url, COUNT(*) as goals
+      FROM match_events me
+      JOIN cached_teams t ON me.team_id = t.id
+      WHERE me.type = 'GOAL' AND me.player_name IS NOT NULL
+      GROUP BY me.match_id, me.player_name
+      ORDER BY goals DESC, me.player_name ASC
       LIMIT 1
     `).get();
 
@@ -325,7 +341,8 @@ router.get('/:ref/stats', (req, res) => {
       latestRed,
       mostGoalsFirstHalf,
       mostGoalsSecondHalf,
-      mostGoalsTotal,
+      mostGoalsSingleGame,
+      mostPlayerGoalsSingleGame,
       mostCleanSheets,
     });
   }
