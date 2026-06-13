@@ -620,20 +620,20 @@ function RecordsView({ stats, participants }) {
           <div style={{ minWidth: 0 }}>
             {isPlayer ? (
               <>
-                <div style={{ fontWeight: 600, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {record.player_name}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, overflow: 'hidden' }}>
+                  <span style={{ fontWeight: 600, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {record.player_name}
+                  </span>
                   {record.logo_url && <img src={record.logo_url} alt="" style={{ width: 12, height: 12, flexShrink: 0 }} />}
-                  <span style={{ fontSize: 11, color: 'var(--color-text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <span style={{ fontSize: 11, color: 'var(--color-text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flexShrink: 1 }}>
                     {record.team_name}
                   </span>
-                  {participant && (
-                    <span style={{ fontSize: 10, color: 'var(--color-accent)', fontWeight: 500, marginLeft: 2 }}>
-                      · {participant.name}
-                    </span>
-                  )}
                 </div>
+                {participant && (
+                  <div style={{ fontSize: 10, color: 'var(--color-accent)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {participant.name}
+                  </div>
+                )}
               </>
             ) : (
               <>
