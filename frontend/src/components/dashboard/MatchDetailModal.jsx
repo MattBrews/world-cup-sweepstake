@@ -119,8 +119,14 @@ export default function MatchDetailModal({ publicId, matchId, onClose }) {
       >
         <div style={{ padding: '20px 20px 0', flexShrink: 0 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-            <div style={{ fontSize: 11, color: 'var(--color-text-muted)', fontWeight: 600 }}>
+            <div style={{ fontSize: 11, color: 'var(--color-text-muted)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
               {fixture ? `${shortRound(fixture.stage)}${fixture.stage === 'Group Stage' && fixture.round ? ' · ' + fixture.round : ''}` : ''}
+              {fixture && (fixture.status === 'IN_PROGRESS' || fixture.lifecycle_state === 'IN_PROGRESS') && (
+                <span style={{ color: 'var(--color-accent)' }}>🔴 LIVE</span>
+              )}
+              {fixture && fixture.status === 'FT' && (
+                <span style={{ color: 'var(--color-text-muted)', fontSize: 10 }}>FT</span>
+              )}
             </div>
             <button
               onClick={onClose}
@@ -145,9 +151,11 @@ export default function MatchDetailModal({ publicId, matchId, onClose }) {
                 <TeamHeader team={homeTeam} participantName={homeParticipant?.name} side="home" />
                 <div style={{ flexShrink: 0, textAlign: 'center' }}>
                   <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--color-accent)' }}>
-                    {fixture.status === 'FT' ? `${fixture.home_score ?? '-'} : ${fixture.away_score ?? '-'}` : 'vs'}
+                    {fixture.status === 'FT' || fixture.status === 'IN_PROGRESS' || fixture.lifecycle_state === 'IN_PROGRESS'
+                      ? `${fixture.home_score ?? '-'} : ${fixture.away_score ?? '-'}`
+                      : 'vs'}
                   </div>
-                  {fixture.status === 'FT' && fixture.home_ht_score != null && fixture.away_ht_score != null && (
+                  {(fixture.status === 'FT' || fixture.status === 'IN_PROGRESS') && fixture.home_ht_score != null && fixture.away_ht_score != null && (
                     <div style={{ fontSize: 11, color: 'var(--color-text-muted)', fontWeight: 600 }}>
                       HT: {fixture.home_ht_score} : {fixture.away_ht_score}
                     </div>

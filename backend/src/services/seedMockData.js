@@ -53,18 +53,20 @@ export function seedMockData() {
       }
     }
 
-    // 2. Mark all group stage fixtures as FT
-    const updGs = db.prepare("UPDATE cached_fixtures SET status = 'FT', lifecycle_state = 'FT' WHERE id = ?");
+    // 2. Mark all group stage fixtures as FT (skip live matches)
+    const updGs = db.prepare(
+      "UPDATE cached_fixtures SET status = 'FT', lifecycle_state = 'FT' WHERE id = ? AND (lifecycle_state IS NULL OR lifecycle_state NOT IN ('IN_PROGRESS'))"
+    );
     for (let i = 1; i <= 72; i++) updGs.run(i);
 
-    // 3. Set R32 team IDs, scores, status
+    // 3. Set R32 team IDs, scores, status (skip live matches)
     const updR32 = db.prepare(
       `UPDATE cached_fixtures
        SET home_team_id = ?, away_team_id = ?,
            home_score = ?, away_score = ?,
            home_ht_score = ?, away_ht_score = ?,
            status = 'FT', lifecycle_state = 'COMPLETE'
-       WHERE id = ?`
+       WHERE id = ? AND (lifecycle_state IS NULL OR lifecycle_state NOT IN ('IN_PROGRESS'))`
     );
     for (const [fid, hId, aId, hs, as, hht, aht] of R32_MATCHUPS) {
       updR32.run(hId, aId, hs, as, hht, aht, fid);

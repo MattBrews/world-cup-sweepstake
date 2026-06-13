@@ -66,7 +66,7 @@ export default function MatchCard({ fixture, homeTeam, awayTeam, participants, t
   const awayParticipant = participants.find(p => p.team_id === fixture.away_team_id);
   const isFinished = fixture.status === 'FT';
   const isAwaiting = fixture.status === 'AWAITING';
-  const isLive = false;
+  const isLive = fixture.status === 'IN_PROGRESS' || fixture.lifecycle_state === 'IN_PROGRESS';
 
   const fixtureMap = {};
   if (allFixtures) for (const f of allFixtures) fixtureMap[f.id] = f;
@@ -82,18 +82,18 @@ export default function MatchCard({ fixture, homeTeam, awayTeam, participants, t
   return (
     <div
       className="glass"
-      onClick={onClick && isFinished ? () => onClick(fixture.id) : undefined}
+      onClick={onClick && (isFinished || isLive) ? () => onClick(fixture.id) : undefined}
       style={{
         padding: '14px 16px',
         borderLeft: `3px solid ${isLive ? 'var(--color-accent)' : isFinished ? 'var(--token-7)' : isAwaiting ? 'var(--token-4)' : 'rgba(255,255,255,0.1)'}`,
-        cursor: onClick && isFinished ? 'pointer' : undefined,
-        transition: onClick && isFinished ? 'transform 0.15s, box-shadow 0.15s' : undefined,
+        cursor: onClick && (isFinished || isLive) ? 'pointer' : undefined,
+        transition: onClick && (isFinished || isLive) ? 'transform 0.15s, box-shadow 0.15s' : undefined,
         position: 'relative',
       }}
-      onMouseEnter={onClick && isFinished ? e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.3)'; } : undefined}
-      onMouseLeave={onClick && isFinished ? e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = ''; } : undefined}
+      onMouseEnter={onClick && (isFinished || isLive) ? e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.3)'; } : undefined}
+      onMouseLeave={onClick && (isFinished || isLive) ? e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = ''; } : undefined}
     >
-      {onClick && isFinished && (
+      {onClick && (isFinished || isLive) && (
         <div style={{
           position: 'absolute',
           top: 8,

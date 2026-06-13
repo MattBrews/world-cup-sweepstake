@@ -239,21 +239,32 @@ export class FifaLiveProvider extends DataService {
 
         const homeScore = data.HomeTeam?.Score ?? null;
         const awayScore = data.AwayTeam?.Score ?? null;
-        const matchStatus = data.MatchStatus || null;
+        const period = data.Period;
 
         let newState = fixture.lifecycle_state;
         let newStatus = null;
 
-        if (matchStatus) {
-          const statusUpper = matchStatus.toUpperCase();
-          if (statusUpper === 'FT' || statusUpper === 'AET' || statusUpper === 'AP') {
+        if (period != null) {
+          if (period >= 10) {
             newState = MATCH_STATUS.FT;
             newStatus = 'FT';
-          } else if (statusUpper.includes('LIVE') || statusUpper.includes('IN-PLAY') ||
-                     statusUpper.includes('1ST') || statusUpper.includes('2ND') ||
-                     statusUpper.includes('HALF') || statusUpper.includes('EXTRA')) {
+          } else if (period > 0) {
             newState = MATCH_STATUS.IN_PROGRESS;
             newStatus = 'IN_PROGRESS';
+          }
+        } else {
+          const matchStatus = data.MatchStatus || null;
+          if (matchStatus) {
+            const statusUpper = String(matchStatus).toUpperCase();
+            if (statusUpper === 'FT' || statusUpper === 'AET' || statusUpper === 'AP') {
+              newState = MATCH_STATUS.FT;
+              newStatus = 'FT';
+            } else if (statusUpper.includes('LIVE') || statusUpper.includes('IN-PLAY') ||
+                       statusUpper.includes('1ST') || statusUpper.includes('2ND') ||
+                       statusUpper.includes('HALF') || statusUpper.includes('EXTRA')) {
+              newState = MATCH_STATUS.IN_PROGRESS;
+              newStatus = 'IN_PROGRESS';
+            }
           }
         }
 

@@ -49,6 +49,7 @@ export default function DashboardPage() {
   const stageFixtures = data.fixtures.filter(f => f.stage === activeStage);
   const stageTotal = stageFixtures.length;
   const stageCompleted = stageFixtures.filter(f => f.status === 'FT').length;
+  const liveFixtures = data.fixtures.filter(f => f.status === 'IN_PROGRESS' || f.lifecycle_state === 'IN_PROGRESS');
 
   const groupedStandings = {};
   for (const s of data.standings) {
@@ -119,7 +120,7 @@ export default function DashboardPage() {
         </h3>
         <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
           {data.fixtures
-            .filter(f => f.status !== 'FT' && f.status !== 'AWAITING')
+            .filter(f => f.status !== 'FT' && f.status !== 'AWAITING' && f.status !== 'IN_PROGRESS' && f.lifecycle_state !== 'IN_PROGRESS')
             .sort((a, b) => new Date(a.date) - new Date(b.date))
             .slice(0, 5)
             .map(f => (
@@ -135,11 +136,34 @@ export default function DashboardPage() {
                 />
               </div>
             ))}
-          {data.fixtures.filter(f => f.status !== 'FT' && f.status !== 'AWAITING').length === 0 && (
+          {data.fixtures.filter(f => f.status !== 'FT' && f.status !== 'AWAITING' && f.status !== 'IN_PROGRESS' && f.lifecycle_state !== 'IN_PROGRESS').length === 0 && (
             <p style={{ color: 'var(--color-text-muted)', fontSize: 13, padding: '8px 0' }}>All matches played.</p>
           )}
         </div>
       </div>
+
+      {liveFixtures.length > 0 && (
+        <div style={{ marginBottom: 20 }}>
+          <h3 style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-accent)', marginBottom: 8 }}>
+            🔴 Live Now
+          </h3>
+          <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
+            {liveFixtures.map(f => (
+              <div key={f.id} style={{ width: 240, flexShrink: 0 }}>
+                <MatchCard
+                  fixture={f}
+                  homeTeam={teamMap[f.home_team_id]}
+                  awayTeam={teamMap[f.away_team_id]}
+                  participants={data.participants}
+                  teams={data.teams}
+                  allFixtures={data.fixtures}
+                  onClick={setSelectedMatchId}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {recentResults.length > 0 && (
         <div style={{ marginBottom: 20 }}>
