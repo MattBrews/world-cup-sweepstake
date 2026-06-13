@@ -5,6 +5,7 @@ import { FifaCalendarProvider } from './providers/fifaCalendarProvider.js';
 import { FifaTvProvider } from './providers/fifaTvProvider.js';
 import { FifaLiveProvider } from './providers/fifaLiveProvider.js';
 import { recalculateStandings } from './standingsCalculator.js';
+import { seedMockData } from './seedMockData.js';
 
 const openFootball = new OpenFootballProvider();
 const upboundWeb = new UpboundWebProvider();
@@ -133,6 +134,11 @@ export async function syncAll() {
 
   const liveResult = await syncLive();
   Object.assign(result, liveResult);
+
+  if (process.env.SEED_MOCK_DATA === 'true') {
+    const seedResult = seedMockData();
+    console.log(`[seed] Mock data applied: ${seedResult.r32Completed} R32 matches, ${seedResult.standings} standings`);
+  }
 
   return result;
 }

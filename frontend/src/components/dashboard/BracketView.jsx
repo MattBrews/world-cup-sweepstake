@@ -96,18 +96,6 @@ export default function BracketView({ fixtures, allFixtures = [], teams, partici
         return (
           <div key={round.key} style={{ minWidth: 200, flex: 1 }}>
             <div style={{
-              fontSize: 12,
-              fontWeight: 700,
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-              color: 'var(--color-text-muted)',
-              marginBottom: 12,
-              padding: '0 4px',
-              textAlign: 'center',
-            }}>
-              {round.label}
-            </div>
-            <div style={{
               display: 'flex',
               flexDirection: 'column',
               gap: `${matchGap}px`,
@@ -147,80 +135,80 @@ export default function BracketView({ fixtures, allFixtures = [], teams, partici
                       onMouseEnter={onClick && isFinished ? e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.3)'; } : undefined}
                       onMouseLeave={onClick && isFinished ? e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = ''; } : undefined}
                     >
-                      {pos && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                          {homeTeam?.logo_url && <img src={homeTeam.logo_url} alt="" style={{ width: 16, height: 16, flexShrink: 0 }} />}
+                          <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                            <span style={{
+                              fontWeight: homeTeam ? 600 : 400,
+                              fontSize: 12,
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              color: homeTeam ? undefined : 'var(--color-text-muted)',
+                              fontStyle: homeTeam ? undefined : 'italic',
+                            }} title={homeLabel}>
+                              {homeLabel}
+                            </span>
+                            {homeTeam && teamToParticipant[homeTeam.id] && (
+                              <span style={{
+                                fontSize: 10,
+                                fontWeight: 600,
+                                color: 'var(--token-7)',
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                              }} title={teamToParticipant[homeTeam.id]}>
+                                {teamToParticipant[homeTeam.id]}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
                         <div style={{
-                          fontSize: 10,
-                          fontWeight: 700,
-                          color: 'rgba(255,255,255,0.25)',
-                          marginBottom: 4,
+                          fontWeight: 800,
+                          fontSize: 14,
+                          flexShrink: 0,
+                          textAlign: 'center',
                         }}>
-                          #{pos}
+                          <span style={{ whiteSpace: 'nowrap' }}>
+                            {isFinished ? (f.home_score ?? '-') : '-'}:{isFinished ? (f.away_score ?? '-') : '-'}
+                          </span>
+                          {(f.home_ht_score ?? f.away_ht_score) != null && (
+                            <div style={{ fontSize: 10, fontWeight: 500, color: 'var(--color-text-muted)', whiteSpace: 'nowrap', marginTop: 1 }}>
+                              HT {f.home_ht_score ?? '-'}:{f.away_ht_score ?? '-'}
+                            </div>
+                          )}
                         </div>
-                      )}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
-                            {homeTeam?.logo_url && <img src={homeTeam.logo_url} alt="" style={{ width: 16, height: 16, flexShrink: 0 }} />}
-                            <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+
+                        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6, minWidth: 0 }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                            <span style={{
+                              fontWeight: awayTeam ? 600 : 400,
+                              fontSize: 12,
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              color: awayTeam ? undefined : 'var(--color-text-muted)',
+                              fontStyle: awayTeam ? undefined : 'italic',
+                            }} title={awayLabel}>
+                              {awayLabel}
+                            </span>
+                            {awayTeam && teamToParticipant[awayTeam.id] && (
                               <span style={{
-                                fontWeight: homeTeam ? 600 : 400,
+                                fontSize: 10,
+                                fontWeight: 600,
+                                color: 'var(--token-7)',
                                 whiteSpace: 'nowrap',
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
-                                color: homeTeam ? undefined : 'var(--color-text-muted)',
-                                fontStyle: homeTeam ? undefined : 'italic',
-                              }} title={homeLabel}>
-                                {homeLabel}
+                                textAlign: 'right',
+                              }} title={teamToParticipant[awayTeam.id]}>
+                                {teamToParticipant[awayTeam.id]}
                               </span>
-                              {homeTeam && teamToParticipant[homeTeam.id] && (
-                                <span style={{
-                                  fontSize: 10,
-                                  fontWeight: 600,
-                                  color: 'var(--token-7)',
-                                  whiteSpace: 'nowrap',
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                }} title={teamToParticipant[homeTeam.id]}>
-                                  {teamToParticipant[homeTeam.id]}
-                                </span>
-                              )}
-                            </div>
+                            )}
                           </div>
-                          <span style={{ fontWeight: 800, marginLeft: 8, flexShrink: 0 }}>
-                            {isFinished ? (f.home_score ?? '-') : '-'}
-                          </span>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
-                            {awayTeam?.logo_url && <img src={awayTeam.logo_url} alt="" style={{ width: 16, height: 16, flexShrink: 0 }} />}
-                            <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-                              <span style={{
-                                fontWeight: awayTeam ? 600 : 400,
-                                whiteSpace: 'nowrap',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                color: awayTeam ? undefined : 'var(--color-text-muted)',
-                                fontStyle: awayTeam ? undefined : 'italic',
-                              }} title={awayLabel}>
-                                {awayLabel}
-                              </span>
-                              {awayTeam && teamToParticipant[awayTeam.id] && (
-                                <span style={{
-                                  fontSize: 10,
-                                  fontWeight: 600,
-                                  color: 'var(--token-7)',
-                                  whiteSpace: 'nowrap',
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                }} title={teamToParticipant[awayTeam.id]}>
-                                  {teamToParticipant[awayTeam.id]}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          <span style={{ fontWeight: 800, marginLeft: 8, flexShrink: 0 }}>
-                            {isFinished ? (f.away_score ?? '-') : '-'}
-                          </span>
+                          {awayTeam?.logo_url && <img src={awayTeam.logo_url} alt="" style={{ width: 16, height: 16, flexShrink: 0 }} />}
                         </div>
                       </div>
                     </div>

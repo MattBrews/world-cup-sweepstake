@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { getDb } from '../db/connection.js';
 import { requireAdmin } from '../middleware/auth.js';
+import { isTeamEliminated } from '../services/seedMockData.js';
 
 const router = Router();
 
@@ -21,6 +22,10 @@ router.get('/:ref/participants', (req, res) => {
   const db = getDb();
   const sweep = lookupSweep(req.params.ref);
   if (!sweep) return res.status(404).json({ error: 'Not found' });
+
+  const fixtures = db.prepare('SELECT * FROM cached_fixtures').all();
+  const standings = db.prepare('SELECT * FROM cached_standings').all();
+
   const list = db.prepare(
     `SELECT p.id, p.name, p.team_id, p.team_name, t.group_letter
      FROM participants p
@@ -28,7 +33,13 @@ router.get('/:ref/participants', (req, res) => {
      WHERE p.sweepstake_id = ?
      ORDER BY p.name`
   ).all(sweep.id);
-  res.json(list);
+
+  const result = list.map(p => ({
+    ...p,
+    eliminated: isTeamEliminated(p.team_id, fixtures, standings),
+  }));
+
+  res.json(result);
 });
 
 router.post('/:slug/participants', requireAdmin, (req, res) => {
