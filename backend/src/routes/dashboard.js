@@ -320,6 +320,28 @@ router.get('/:ref/stats', (req, res) => {
       LIMIT 1
     `).get();
 
+    // Most goals by a player in the first half (across all matches)
+    const mostPlayerGoalsFirstHalf = db.prepare(`
+      SELECT me.player_name, me.team_id, t.name as team_name, t.logo_url, COUNT(*) as goals
+      FROM match_events me
+      JOIN cached_teams t ON me.team_id = t.id
+      WHERE me.type = 'GOAL' AND me.player_name IS NOT NULL AND ${minuteExpr} <= 45
+      GROUP BY me.player_name, me.team_id
+      ORDER BY goals DESC, me.player_name ASC
+      LIMIT 1
+    `).get();
+
+    // Most goals by a player in the second half (across all matches)
+    const mostPlayerGoalsSecondHalf = db.prepare(`
+      SELECT me.player_name, me.team_id, t.name as team_name, t.logo_url, COUNT(*) as goals
+      FROM match_events me
+      JOIN cached_teams t ON me.team_id = t.id
+      WHERE me.type = 'GOAL' AND me.player_name IS NOT NULL AND ${minuteExpr} > 45
+      GROUP BY me.player_name, me.team_id
+      ORDER BY goals DESC, me.player_name ASC
+      LIMIT 1
+    `).get();
+
     // Most clean sheets
     const mostCleanSheets = db.prepare(`
       SELECT t.id as team_id, t.name, t.logo_url, COUNT(*) as goals
@@ -343,6 +365,8 @@ router.get('/:ref/stats', (req, res) => {
       mostGoalsSecondHalf,
       mostGoalsSingleGame,
       mostPlayerGoalsSingleGame,
+      mostPlayerGoalsFirstHalf,
+      mostPlayerGoalsSecondHalf,
       mostCleanSheets,
     });
   }

@@ -603,7 +603,7 @@ function RecordsView({ stats, participants }) {
 
   const RecordRow = ({ label, record, showMinute = true, showGoals = false, isPlayer = false }) => {
     if (!record) return null;
-    const participant = !isPlayer ? getParticipant(record.team_id) : null;
+    const participant = getParticipant(record.team_id);
     
     return (
       <div style={{
@@ -623,11 +623,9 @@ function RecordsView({ stats, participants }) {
               <div style={{ fontWeight: 600, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {isPlayer ? record.player_name : (record.name || record.team_name)}
               </div>
-              {participant && (
-                <div style={{ fontSize: 10, color: 'var(--color-accent)', fontWeight: 500 }}>
-                  {participant.name}
-                </div>
-              )}
+              <div style={{ fontSize: 10, color: 'var(--color-accent)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {participant ? participant.name : (record.team_name || record.name || '')}
+              </div>
             </div>
           </div>
         </div>
@@ -661,6 +659,8 @@ function RecordsView({ stats, participants }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
         <RecordCard label="Players">
           <RecordRow label="Most Goals (Single Game)" record={stats.mostPlayerGoalsSingleGame} showGoals={true} isPlayer={true} />
+          <RecordRow label="Most Goals (1st Half)" record={stats.mostPlayerGoalsFirstHalf} showGoals={true} isPlayer={true} />
+          <RecordRow label="Most Goals (2nd Half)" record={stats.mostPlayerGoalsSecondHalf} showGoals={true} isPlayer={true} />
         </RecordCard>
 
         <RecordCard label="Cards">
