@@ -108,7 +108,7 @@ export default function MatchCard({ fixture, homeTeam, awayTeam, participants, t
       {!compact && (
         <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginBottom: 6 }}>
           {isLive ? (
-            <div>🔴 LIVE</div>
+            <div>🔴 LIVE{fixture.current_minute != null ? ` ${fixture.current_minute}'` : ''}</div>
           ) : isAwaiting ? (
             <div style={{ color: 'var(--token-4)' }}>⏳ Awaiting result</div>
           ) : (

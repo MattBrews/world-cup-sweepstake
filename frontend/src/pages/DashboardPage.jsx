@@ -20,10 +20,18 @@ export default function DashboardPage() {
   const [selectedMatchId, setSelectedMatchId] = useState(null);
 
   useEffect(() => {
-    Promise.all([
-      getDashboard(publicId).then(d => { setData(d); setActiveStage(d.currentStage); }).catch(() => setData(null)),
+    const fetchData = () => Promise.all([
+      getDashboard(publicId).then(d => { setData(d); setActiveStage(d.currentStage); }).catch(() => {}),
       getRecentResults(publicId).then(setRecentResults).catch(() => {}),
-    ]).finally(() => setLoading(false));
+    ]);
+
+    fetchData().finally(() => setLoading(false));
+
+    const interval = setInterval(() => {
+      fetchData();
+    }, 30000);
+
+    return () => clearInterval(interval);
   }, [publicId]);
 
   if (loading) {

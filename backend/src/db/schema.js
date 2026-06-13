@@ -103,6 +103,8 @@ export function runMigrations() {
   try { db.exec("ALTER TABLE cached_fixtures ADD COLUMN lifecycle_state TEXT DEFAULT 'SCHEDULED'"); } catch {}
   try { db.exec("ALTER TABLE cached_fixtures ADD COLUMN last_synced_at TEXT"); } catch {}
   try { db.exec("ALTER TABLE cached_fixtures ADD COLUMN data_sources TEXT"); } catch {}
+  try { db.exec("ALTER TABLE cached_fixtures ADD COLUMN current_minute INTEGER"); } catch {}
+  try { db.exec("ALTER TABLE cached_fixtures ADD COLUMN period INTEGER"); } catch {}
 
   // Match events (timeline)
   db.exec(`

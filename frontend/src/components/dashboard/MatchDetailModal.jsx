@@ -75,9 +75,16 @@ export default function MatchDetailModal({ publicId, matchId, onClose }) {
     if (!matchId) return;
     setLoading(true);
     getMatchDetails(publicId, matchId)
-      .then(d => setData(d))
-      .catch(() => setData(null))
-      .finally(() => setLoading(false));
+      .then(d => { setData(d); setLoading(false); })
+      .catch(() => { setData(null); setLoading(false); });
+
+    const interval = setInterval(() => {
+      getMatchDetails(publicId, matchId)
+        .then(d => setData(d))
+        .catch(() => {});
+    }, 30000);
+
+    return () => clearInterval(interval);
   }, [publicId, matchId]);
 
   useEffect(() => {
@@ -123,7 +130,7 @@ export default function MatchDetailModal({ publicId, matchId, onClose }) {
             <div style={{ fontSize: 11, color: 'var(--color-text-muted)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
               {fixture ? `${shortRound(fixture.stage)}${fixture.stage === 'Group Stage' && fixture.round ? ' · ' + fixture.round : ''}` : ''}
               {fixture && (fixture.status === 'IN_PROGRESS' || fixture.lifecycle_state === 'IN_PROGRESS') && (
-                <span style={{ color: 'var(--color-accent)' }}>🔴 LIVE</span>
+                <span style={{ color: 'var(--color-accent)' }}>🔴 LIVE{fixture.current_minute != null ? ` ${fixture.current_minute}'` : ''}</span>
               )}
               {fixture && fixture.status === 'FT' && (
                 <span style={{ color: 'var(--color-text-muted)', fontSize: 10 }}>FT</span>
@@ -204,6 +211,7 @@ export default function MatchDetailModal({ publicId, matchId, onClose }) {
               awayTeamId={fixture?.away_team_id}
               homeTeam={homeTeam}
               awayTeam={awayTeam}
+              fixture={fixture}
             />
           )}
           {!loading && data && tab === 'Line-ups' && (
@@ -235,7 +243,7 @@ function formatMinute(minute) {
   return `${minute}'`;
 }
 
-function TimelineTab({ events, homeTeamId, awayTeamId, homeTeam, awayTeam }) {
+function TimelineTab({ events, homeTeamId, awayTeamId, homeTeam, awayTeam, fixture }) {
   if (events.length === 0) {
     return <div style={{ textAlign: 'center', padding: 40, color: 'var(--color-text-muted)' }}>No events recorded.</div>;
   }
@@ -246,6 +254,21 @@ function TimelineTab({ events, homeTeamId, awayTeamId, homeTeam, awayTeam }) {
   const neutralEvents = validEvents.filter(e => !e.team_id || (parseInt(e.team_id) !== parseInt(homeTeamId) && parseInt(e.team_id) !== parseInt(awayTeamId)));
 
   const allMinutes = [...new Set(validEvents.map(e => parseMinute(e.minute)))].sort((a, b) => a - b);
+
+  const halftimeReached = fixture?.status === 'FT' || fixture?.current_minute > 45;
+  const hasSecondHalfEvents = allMinutes.some(m => m > 45);
+  const lastMinute = allMinutes.length > 0 ? allMinutes[allMinutes.length - 1] : null;
+  const showHalftimeEnd = halftimeReached && !hasSecondHalfEvents && lastMinute != null && lastMinute <= 45;
+
+  function HalftimeRow() {
+    return (
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '8px 0' }}>
+        <div style={{ flex: 1, height: 1, background: 'var(--color-text-muted)', opacity: 0.3 }} />
+        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', letterSpacing: 1, textTransform: 'uppercase' }}>Half Time</div>
+        <div style={{ flex: 1, height: 1, background: 'var(--color-text-muted)', opacity: 0.3 }} />
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -270,13 +293,7 @@ function TimelineTab({ events, homeTeamId, awayTeamId, homeTeam, awayTeam }) {
 
           return (
             <React.Fragment key={minute}>
-              {showHalftime && (
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '8px 0' }}>
-                  <div style={{ flex: 1, height: 1, background: 'var(--color-text-muted)', opacity: 0.3 }} />
-                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', letterSpacing: 1, textTransform: 'uppercase' }}>Half Time</div>
-                  <div style={{ flex: 1, height: 1, background: 'var(--color-text-muted)', opacity: 0.3 }} />
-                </div>
-              )}
+              {showHalftime && <HalftimeRow />}
               <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
                   {homeMinEvents.map((e, i) => (
@@ -299,6 +316,7 @@ function TimelineTab({ events, homeTeamId, awayTeamId, homeTeam, awayTeam }) {
             </React.Fragment>
           );
         })}
+        {showHalftimeEnd && <HalftimeRow />}
         {neutralEvents.length > 0 && (
           <div style={{ marginTop: 12, padding: '8px', borderRadius: 8, background: 'rgba(255,255,255,0.02)' }}>
             <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-text-muted)', marginBottom: 4 }}>Other</div>

@@ -248,6 +248,26 @@ export class FifaLiveProvider extends DataService {
         const awayScore = data.AwayTeam?.Score ?? null;
         const period = data.Period;
 
+        // Derive current minute from API field or fall back to max event minute
+        let currentMinute = data.MatchTime || data.MatchMinute || data.Minute || null;
+        if (currentMinute == null) {
+          const allEvents = [
+            ...(data.HomeTeam?.Goals || []).map(g => g.Minute),
+            ...(data.AwayTeam?.Goals || []).map(g => g.Minute),
+            ...(data.HomeTeam?.Bookings || []).map(b => b.Minute),
+            ...(data.AwayTeam?.Bookings || []).map(b => b.Minute),
+            ...(data.HomeTeam?.Substitutions || []).map(s => s.Minute),
+            ...(data.AwayTeam?.Substitutions || []).map(s => s.Minute),
+          ].filter(Boolean);
+          const parsed = allEvents.map(m => {
+            const str = String(m);
+            const match = str.match(/^(\d+)(?:\+(\d+))?/);
+            if (!match) return 0;
+            return parseInt(match[1]) + (match[2] ? parseInt(match[2]) : 0);
+          });
+          if (parsed.length > 0) currentMinute = Math.max(...parsed);
+        }
+
         let newState = fixture.lifecycle_state;
         let newStatus = null;
 
@@ -286,6 +306,16 @@ export class FifaLiveProvider extends DataService {
         if (newStatus) {
           updateFields.push('status = ?');
           updateValues.push(newStatus);
+        }
+
+        if (currentMinute != null) {
+          updateFields.push('current_minute = ?');
+          updateValues.push(parseInt(currentMinute) || 0);
+        }
+
+        if (period != null) {
+          updateFields.push('period = ?');
+          updateValues.push(period);
         }
 
         updateFields.push("last_synced_at = datetime('now')");
