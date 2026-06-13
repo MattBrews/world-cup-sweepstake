@@ -288,6 +288,65 @@ export class FifaLiveProvider extends DataService {
           `UPDATE cached_fixtures SET ${updateFields.join(', ')} WHERE id = ?`
         ).run(...updateValues);
 
+        if (newState === MATCH_STATUS.IN_PROGRESS || newState === MATCH_STATUS.FT) {
+          db.prepare('DELETE FROM match_events WHERE match_id = ?').run(fixture.id);
+          db.prepare('DELETE FROM match_lineups WHERE match_id = ?').run(fixture.id);
+
+          const goals = data.HomeTeam?.Goals || [];
+          for (const g of data.AwayTeam?.Goals || []) goals.push(g);
+          for (const g of goals) {
+            const scorerName = findPlayerName(data, g.IdTeam, g.IdPlayer);
+            const assistName = g.IdAssistPlayer ? findPlayerName(data, g.IdTeam, g.IdAssistPlayer) : null;
+            db.prepare(
+              `INSERT INTO match_events (match_id, team_id, type, minute, period, player_name, additional_info)
+               VALUES (?, ?, 'GOAL', ?, ?, ?, ?)`
+            ).run(fixture.id, resolveTeamId(g.IdTeam), g.Minute || null, g.Period || null, scorerName, JSON.stringify({ assist: assistName, goalType: g.Type }));
+          }
+
+          const bookings = data.HomeTeam?.Bookings || [];
+          for (const b of data.AwayTeam?.Bookings || []) bookings.push(b);
+          for (const b of bookings) {
+            const playerName = findPlayerName(data, b.IdTeam, b.IdPlayer);
+            db.prepare(
+              `INSERT INTO match_events (match_id, team_id, type, minute, period, player_name, additional_info)
+               VALUES (?, ?, 'BOOKING', ?, ?, ?, ?)`
+            ).run(fixture.id, resolveTeamId(b.IdTeam), b.Minute || null, b.Period || null, playerName, JSON.stringify({ card: cardType(b.Card) }));
+          }
+
+          const subs = data.HomeTeam?.Substitutions || [];
+          for (const s of data.AwayTeam?.Substitutions || []) subs.push(s);
+          for (const s of subs) {
+            const playerOff = s.PlayerOffName?.[0]?.Description || null;
+            const playerOn = s.PlayerOnName?.[0]?.Description || null;
+            db.prepare(
+              `INSERT INTO match_events (match_id, team_id, type, minute, period, player_name, additional_info)
+               VALUES (?, ?, 'SUB', ?, ?, ?, ?)`
+            ).run(fixture.id, resolveTeamId(s.IdTeam), s.Minute || null, s.Period || null, `${playerOff} → ${playerOn}`, JSON.stringify({ playerOff, playerOn }));
+          }
+
+          if (data.Penalties) {
+            for (const p of data.Penalties) {
+              const playerName = p.Player?.Name || p.PlayerName?.[0]?.Description || null;
+              db.prepare(
+                `INSERT INTO match_events (match_id, team_id, type, minute, period, player_name, additional_info)
+                 VALUES (?, ?, 'PENALTY', ?, ?, ?, ?)`
+              ).run(fixture.id, resolveTeamId(p.Team?.Id), null, null, playerName, JSON.stringify({ scored: !!p.Scored }));
+            }
+          }
+
+          for (const side of ['HomeTeam', 'AwayTeam']) {
+            const team = data[side];
+            if (!team) continue;
+            const teamId = resolveTeamId(team.IdTeam);
+            for (const player of team.Players || []) {
+              db.prepare(
+                `INSERT INTO match_lineups (match_id, team_id, player_name, position, shirt_number, is_starter)
+                 VALUES (?, ?, ?, ?, ?, ?)`
+              ).run(fixture.id, teamId, player.PlayerName?.[0]?.Description || null, player.PositionName || positionLabel(player.Position), player.ShirtNumber || null, player.Status === 1 ? 1 : 0);
+            }
+          }
+        }
+
         updated++;
       } catch (err) {
         console.log(`[fifaLive] Error syncing live match ${fixture.id}: ${err.message}`);
