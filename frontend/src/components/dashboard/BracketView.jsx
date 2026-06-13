@@ -15,7 +15,7 @@ function buildRoundPositions(allFixtures) {
   }
   const pos = {};
   for (const stage of Object.keys(byStage)) {
-    const sorted = byStage[stage].sort((a, b) => new Date(a.date) - new Date(b.date));
+    const sorted = byStage[stage].sort((a, b) => a.id - b.id);
     sorted.forEach((f, i) => { pos[f.id] = i + 1; });
   }
   return pos;
@@ -54,7 +54,124 @@ function feederLabel(label, fixtureMap, roundPositions) {
   return label;
 }
 
-export default function BracketView({ fixtures, allFixtures = [], teams, participants = [], onClick }) {
+function buildFeederPairs(roundFixtures, fixtureMap) {
+  const pairs = {};
+  for (let ri = 0; ri < BRACKET_ROUNDS.length - 1; ri++) {
+    const prev = BRACKET_ROUNDS[ri];
+    const next = BRACKET_ROUNDS[ri + 1];
+    const nextMatches = roundFixtures[next.key] || [];
+
+    const pairMap = {};
+    for (const nm of nextMatches) {
+      for (const ph of [nm.home_placeholder, nm.away_placeholder]) {
+        if (!ph || !(ph.startsWith('W') || ph.startsWith('L'))) continue;
+        const fid = parseInt(ph.slice(1));
+        const feeder = fixtureMap[fid];
+        if (feeder && feeder.stage === prev.key) {
+          if (!pairMap[nm.id]) pairMap[nm.id] = [];
+          pairMap[nm.id].push(fid);
+        }
+      }
+    }
+    pairs[prev.key] = Object.values(pairMap)
+      .filter(p => p.length === 2)
+      .map(p => p.sort((a, b) => a - b))
+      .sort((a, b) => a[0] - b[0]);
+  }
+  return pairs;
+}
+
+function MatchCardSmall({ fixture, homeTeam, awayTeam, teamToParticipant, isFinished, isLive, onClick, homeLabel, awayLabel, matchNumber }) {
+  const displayHomeLabel = homeLabel || (fixture.home_team_id === null ? 'TBD' : '?');
+  const displayAwayLabel = awayLabel || (fixture.away_team_id === null ? 'TBD' : '?');
+
+  return (
+    <div
+      className="glass"
+      onClick={onClick && (isFinished || isLive) ? () => onClick(fixture.id) : undefined}
+      style={{
+        padding: '8px 10px',
+        borderLeft: `3px solid ${isFinished ? 'var(--token-7)' : isLive ? 'var(--color-accent)' : 'rgba(255,255,255,0.1)'}`,
+        cursor: onClick && (isFinished || isLive) ? 'pointer' : undefined,
+        transition: 'transform 0.15s, box-shadow 0.15s',
+        flex: 1,
+        minWidth: 0,
+      }}
+      onMouseEnter={onClick && (isFinished || isLive) ? e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.3)'; } : undefined}
+      onMouseLeave={onClick && (isFinished || isLive) ? e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = ''; } : undefined}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        {matchNumber && (
+          <div style={{
+            fontSize: 10,
+            fontWeight: 700,
+            color: 'var(--color-text-muted)',
+            minWidth: 20,
+            textAlign: 'center',
+          }}>
+            #{matchNumber}
+          </div>
+        )}
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 4, minWidth: 0 }}>
+          {homeTeam?.logo_url && <img src={homeTeam.logo_url} alt="" style={{ width: 14, height: 14, flexShrink: 0 }} />}
+          <span style={{
+            fontWeight: homeTeam ? 600 : 400,
+            fontSize: 11,
+            color: homeTeam ? undefined : 'var(--color-text-muted)',
+            fontStyle: homeTeam ? undefined : 'italic',
+            }} title={displayHomeLabel}>
+            {displayHomeLabel}
+          </span>
+          {homeTeam && teamToParticipant[homeTeam.id] && (
+            <span style={{
+              fontSize: 9,
+              fontWeight: 600,
+              color: 'var(--token-7)',
+            }} title={teamToParticipant[homeTeam.id]}>
+              {teamToParticipant[homeTeam.id]}
+            </span>
+          )}
+        </div>
+
+        <div style={{
+          fontWeight: 800,
+          fontSize: 12,
+          flexShrink: 0,
+          textAlign: 'center',
+          minWidth: 28,
+        }}>
+          <span style={{ whiteSpace: 'nowrap' }}>
+            {isFinished || isLive ? (fixture.home_score ?? '-') : '-'}:{isFinished || isLive ? (fixture.away_score ?? '-') : '-'}
+          </span>
+        </div>
+
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 4, minWidth: 0 }}>
+          {awayTeam?.logo_url && <img src={awayTeam.logo_url} alt="" style={{ width: 14, height: 14, flexShrink: 0 }} />}
+          <span style={{
+            fontWeight: awayTeam ? 600 : 400,
+            fontSize: 11,
+            color: awayTeam ? undefined : 'var(--color-text-muted)',
+            fontStyle: awayTeam ? undefined : 'italic',
+            }} title={displayAwayLabel}>
+            {displayAwayLabel}
+          </span>
+          {awayTeam && teamToParticipant[awayTeam.id] && (
+            <span style={{
+              fontSize: 9,
+              fontWeight: 600,
+              color: 'var(--token-7)',
+              textAlign: 'right',
+            }} title={teamToParticipant[awayTeam.id]}>
+              {teamToParticipant[awayTeam.id]}
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function BracketView({ fixtures, allFixtures = [], teams, participants = [], activeRound, onClick }) {
   const fixtureMap = {};
   for (const f of allFixtures) fixtureMap[f.id] = f;
 
@@ -69,8 +186,10 @@ export default function BracketView({ fixtures, allFixtures = [], teams, partici
   for (const r of BRACKET_ROUNDS) {
     roundFixtures[r.key] = fixtures
       .filter(f => f.stage === r.key)
-      .sort((a, b) => new Date(a.date) - new Date(b.date));
+      .sort((a, b) => a.id - b.id);
   }
+
+  const feederPairs = buildFeederPairs(roundFixtures, fixtureMap);
 
   const getTeam = (id) => teams.find(t => t.id === id);
 
@@ -82,140 +201,87 @@ export default function BracketView({ fixtures, allFixtures = [], teams, partici
       paddingBottom: 12,
       alignItems: 'flex-start',
     }}>
-      {BRACKET_ROUNDS.map((round, ri) => {
+      {BRACKET_ROUNDS.filter(round => !activeRound || round.key === activeRound).map((round, ri) => {
         const matches = roundFixtures[round.key] || [];
         if (matches.length === 0) return null;
 
-        const matchGap = ri === 0 ? 8
-          : ri === 1 ? 24
-          : ri === 2 ? 48
-          : ri === 3 ? 96
-          : ri >= 4 ? 160
-          : 8;
+        const pairs = feederPairs[round.key] || [];
+        const hasPairs = pairs.length > 0;
 
         return (
-          <div key={round.key} style={{ minWidth: 200, flex: 1 }}>
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: `${matchGap}px`,
-            }}>
-              {matches.map((f, mi) => {
-                const homeTeam = getTeam(f.home_team_id);
-                const awayTeam = getTeam(f.away_team_id);
-                const isFinished = f.status === 'FT';
-                const pos = roundPositions[f.id];
-                const homeLabel = homeTeam?.name ||
-                  (f.home_team_id === null ? (feederLabel(f.home_placeholder, fixtureMap, roundPositions) || 'TBD') : '?');
-                const awayLabel = awayTeam?.name ||
-                  (f.away_team_id === null ? (feederLabel(f.away_placeholder, fixtureMap, roundPositions) || 'TBD') : '?');
+          <div key={round.key} style={{ minWidth: 400, flex: 1 }}>
+            {hasPairs ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {pairs.map((pair, pi) => {
+                  const colorIdx = Math.floor(pi / 2);
+                  const color = `var(--token-${(colorIdx % 8) + 2})`;
 
-                return (
-                  <div key={f.id} style={{ position: 'relative' }}>
-                    {ri > 0 && mi < (roundFixtures[BRACKET_ROUNDS[ri - 1]?.key]?.length || 0) && (
-                      <div style={{
-                        position: 'absolute',
-                        right: '100%',
-                        top: '50%',
-                        width: 24,
-                        height: 0,
-                        borderTop: '1px solid rgba(255,255,255,0.15)',
-                        marginRight: 0,
-                      }} />
-                    )}
-                    <div
-                      className="glass"
-                      onClick={onClick && isFinished ? () => onClick(f.id) : undefined}
-                      style={{
-                        padding: '10px 12px',
-                        borderLeft: `3px solid ${isFinished ? 'var(--token-7)' : 'rgba(255,255,255,0.1)'}`,
-                        cursor: onClick && isFinished ? 'pointer' : undefined,
-                        transition: onClick && isFinished ? 'transform 0.15s, box-shadow 0.15s' : undefined,
-                      }}
-                      onMouseEnter={onClick && isFinished ? e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.3)'; } : undefined}
-                      onMouseLeave={onClick && isFinished ? e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = ''; } : undefined}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
-                          {homeTeam?.logo_url && <img src={homeTeam.logo_url} alt="" style={{ width: 16, height: 16, flexShrink: 0 }} />}
-                          <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-                            <span style={{
-                              fontWeight: homeTeam ? 600 : 400,
-                              fontSize: 12,
-                              whiteSpace: 'nowrap',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              color: homeTeam ? undefined : 'var(--color-text-muted)',
-                              fontStyle: homeTeam ? undefined : 'italic',
-                            }} title={homeLabel}>
-                              {homeLabel}
-                            </span>
-                            {homeTeam && teamToParticipant[homeTeam.id] && (
-                              <span style={{
-                                fontSize: 10,
-                                fontWeight: 600,
-                                color: 'var(--token-7)',
-                                whiteSpace: 'nowrap',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                              }} title={teamToParticipant[homeTeam.id]}>
-                                {teamToParticipant[homeTeam.id]}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        <div style={{
-                          fontWeight: 800,
-                          fontSize: 14,
-                          flexShrink: 0,
-                          textAlign: 'center',
-                        }}>
-                          <span style={{ whiteSpace: 'nowrap' }}>
-                            {isFinished ? (f.home_score ?? '-') : '-'}:{isFinished ? (f.away_score ?? '-') : '-'}
-                          </span>
-                          {(f.home_ht_score ?? f.away_ht_score) != null && (
-                            <div style={{ fontSize: 10, fontWeight: 500, color: 'var(--color-text-muted)', whiteSpace: 'nowrap', marginTop: 1 }}>
-                              HT {f.home_ht_score ?? '-'}:{f.away_ht_score ?? '-'}
-                            </div>
-                          )}
-                        </div>
-
-                        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6, minWidth: 0 }}>
-                          <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-                            <span style={{
-                              fontWeight: awayTeam ? 600 : 400,
-                              fontSize: 12,
-                              whiteSpace: 'nowrap',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              color: awayTeam ? undefined : 'var(--color-text-muted)',
-                              fontStyle: awayTeam ? undefined : 'italic',
-                            }} title={awayLabel}>
-                              {awayLabel}
-                            </span>
-                            {awayTeam && teamToParticipant[awayTeam.id] && (
-                              <span style={{
-                                fontSize: 10,
-                                fontWeight: 600,
-                                color: 'var(--token-7)',
-                                whiteSpace: 'nowrap',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                textAlign: 'right',
-                              }} title={teamToParticipant[awayTeam.id]}>
-                                {teamToParticipant[awayTeam.id]}
-                              </span>
-                            )}
-                          </div>
-                          {awayTeam?.logo_url && <img src={awayTeam.logo_url} alt="" style={{ width: 16, height: 16, flexShrink: 0 }} />}
-                        </div>
-                      </div>
+                  return (
+                    <div key={pi} style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
+                      {pair.map((fid) => {
+                        const f = fixtureMap[fid];
+                        if (!f) return null;
+                        const homeTeam = getTeam(f.home_team_id);
+                        const awayTeam = getTeam(f.away_team_id);
+                        const isFinished = f.status === 'FT';
+                        const isLive = f.status === 'IN_PROGRESS' || f.lifecycle_state === 'IN_PROGRESS';
+                        const hLabel = homeTeam?.name ||
+                          (f.home_team_id === null ? (feederLabel(f.home_placeholder, fixtureMap, roundPositions) || 'TBD') : '?');
+                        const aLabel = awayTeam?.name ||
+                          (f.away_team_id === null ? (feederLabel(f.away_placeholder, fixtureMap, roundPositions) || 'TBD') : '?');
+                        return (
+                          <MatchCardSmall
+                            key={fid}
+                            fixture={f}
+                            homeTeam={homeTeam}
+                            awayTeam={awayTeam}
+                            teamToParticipant={teamToParticipant}
+                            isFinished={isFinished}
+                            isLive={isLive}
+                            onClick={onClick}
+                            homeLabel={hLabel}
+                            awayLabel={aLabel}
+                            matchNumber={roundPositions[fid]}
+                          />
+                        );
+                      })}
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 8,
+              }}>
+                {matches.map((f) => {
+                  const homeTeam = getTeam(f.home_team_id);
+                  const awayTeam = getTeam(f.away_team_id);
+                  const isFinished = f.status === 'FT';
+                  const isLive = f.status === 'IN_PROGRESS' || f.lifecycle_state === 'IN_PROGRESS';
+                  const hLabel = homeTeam?.name ||
+                    (f.home_team_id === null ? (feederLabel(f.home_placeholder, fixtureMap, roundPositions) || 'TBD') : '?');
+                  const aLabel = awayTeam?.name ||
+                    (f.away_team_id === null ? (feederLabel(f.away_placeholder, fixtureMap, roundPositions) || 'TBD') : '?');
+                  return (
+                    <MatchCardSmall
+                      key={f.id}
+                      fixture={f}
+                      homeTeam={homeTeam}
+                      awayTeam={awayTeam}
+                      teamToParticipant={teamToParticipant}
+                      isFinished={isFinished}
+                      isLive={isLive}
+                      onClick={onClick}
+                      homeLabel={hLabel}
+                      awayLabel={aLabel}
+                      matchNumber={roundPositions[f.id]}
+                    />
+                  );
+                })}
+              </div>
+            )}
           </div>
         );
       })}
