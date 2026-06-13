@@ -10,11 +10,10 @@ export function recalculateStandings() {
   ).all();
 
   const fixtures = db.prepare(
-    `SELECT home_team_id, away_team_id, home_score, away_score
+    `SELECT home_team_id, away_team_id, home_score, away_score, status
      FROM cached_fixtures
      WHERE home_team_id IS NOT NULL AND away_team_id IS NOT NULL
-       AND home_score IS NOT NULL AND away_score IS NOT NULL
-       AND status = 'FT'`
+       AND home_score IS NOT NULL AND away_score IS NOT NULL`
   ).all();
 
   const teamGroups = {};
@@ -32,19 +31,22 @@ export function recalculateStandings() {
     const a = f.away_team_id;
     if (!stats[h] || !stats[a]) continue;
 
-    stats[h].p++;
-    stats[a].p++;
     stats[h].gf += f.home_score;
     stats[h].ga += f.away_score;
     stats[a].gf += f.away_score;
     stats[a].ga += f.home_score;
 
-    if (f.home_score > f.away_score) {
-      stats[h].w++; stats[h].pts += 3; stats[a].l++;
-    } else if (f.home_score < f.away_score) {
-      stats[a].w++; stats[a].pts += 3; stats[h].l++;
-    } else {
-      stats[h].d++; stats[h].pts++; stats[a].d++; stats[a].pts++;
+    if (f.status === 'FT') {
+      stats[h].p++;
+      stats[a].p++;
+
+      if (f.home_score > f.away_score) {
+        stats[h].w++; stats[h].pts += 3; stats[a].l++;
+      } else if (f.home_score < f.away_score) {
+        stats[a].w++; stats[a].pts += 3; stats[h].l++;
+      } else {
+        stats[h].d++; stats[h].pts++; stats[a].d++; stats[a].pts++;
+      }
     }
   }
 
