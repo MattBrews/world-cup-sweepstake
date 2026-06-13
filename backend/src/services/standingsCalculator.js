@@ -13,7 +13,8 @@ export function recalculateStandings() {
     `SELECT home_team_id, away_team_id, home_score, away_score
      FROM cached_fixtures
      WHERE home_team_id IS NOT NULL AND away_team_id IS NOT NULL
-       AND home_score IS NOT NULL AND away_score IS NOT NULL`
+       AND home_score IS NOT NULL AND away_score IS NOT NULL
+       AND status = 'FT'`
   ).all();
 
   const teamGroups = {};
