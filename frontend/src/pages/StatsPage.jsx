@@ -617,16 +617,39 @@ function RecordsView({ stats, participants }) {
           <div style={{ fontSize: 10, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 3 }}>
             {label}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            {record.logo_url && <img src={record.logo_url} alt="" style={{ width: 16, height: 16, flexShrink: 0 }} />}
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontWeight: 600, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {isPlayer ? record.player_name : (record.name || record.team_name)}
-              </div>
-              <div style={{ fontSize: 10, color: 'var(--color-accent)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {participant ? participant.name : (record.team_name || record.name || '')}
-              </div>
-            </div>
+          <div style={{ minWidth: 0 }}>
+            {isPlayer ? (
+              <>
+                <div style={{ fontWeight: 600, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {record.player_name}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 1 }}>
+                  {record.logo_url && <img src={record.logo_url} alt="" style={{ width: 12, height: 12, flexShrink: 0 }} />}
+                  <span style={{ fontSize: 11, color: 'var(--color-text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {record.team_name}
+                  </span>
+                  {participant && (
+                    <span style={{ fontSize: 10, color: 'var(--color-accent)', fontWeight: 500, marginLeft: 2 }}>
+                      · {participant.name}
+                    </span>
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  {record.logo_url && <img src={record.logo_url} alt="" style={{ width: 16, height: 16, flexShrink: 0 }} />}
+                  <span style={{ fontWeight: 600, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {record.name || record.team_name}
+                  </span>
+                </div>
+                {participant && (
+                  <div style={{ fontSize: 10, color: 'var(--color-accent)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: 1, paddingLeft: 22 }}>
+                    {participant.name}
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </div>
         {showMinute && record.minute != null && (
