@@ -54,3 +54,35 @@ input, select {
   border: 1px solid var(--color-glass-border);
   border-radius: var(--radius-card);
 }
+
+/* Mobile responsive styles */
+@media (max-width: 768px) {
+  .bracket-card {
+    padding: 8px 10px !important;
+  }
+  
+  .bracket-card .team-name {
+    font-size: 11px !important;
+  }
+  
+  .bracket-card .participant-name {
+    font-size: 8px !important;
+  }
+  
+  .bracket-card .score {
+    font-size: 12px !important;
+  }
+  
+  .bracket-card img {
+    width: 16px !important;
+    height: 16px !important;
+  }
+  
+  .bracket-pair {
+    min-height: 70px !important;
+  }
+  
+  .bracket-connector {
+    width: 40px !important;
+  }
+}
