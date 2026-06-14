@@ -244,11 +244,10 @@ function FinalSlide({ roundFixtures, getTeam, teamToParticipant, fixtureMap, rou
         </div>
 
         <svg className="bracket-connector" style={{ overflow: 'visible', flex: '0 0 40px', height: '100%', minWidth: 30, maxWidth: 50 }}>
-          <line x1="0" y1="25%" x2="50%" y2="25%" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
-          <line x1="0" y1="75%" x2="50%" y2="75%" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
-          <line x1="50%" y1="25%" x2="50%" y2="75%" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
-          <line x1="50%" y1="50%" x2="100%" y2="25%" stroke="rgba(255,255,255,0.15)" strokeWidth="1" strokeDasharray="3,2" />
-          <line x1="50%" y1="50%" x2="100%" y2="75%" stroke="rgba(255,255,255,0.15)" strokeWidth="1" strokeDasharray="3,2" />
+          <line x1="0" y1="25%" x2="40%" y2="25%" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
+          <line x1="0" y1="75%" x2="40%" y2="75%" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
+          <line x1="40%" y1="25%" x2="40%" y2="75%" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
+          <line x1="40%" y1="50%" x2="100%" y2="25%" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
         </svg>
 
         <div style={{ flex: '1 1 45%', display: 'flex', flexDirection: 'column', minWidth: 0, height: '100%' }}>
