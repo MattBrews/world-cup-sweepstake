@@ -86,3 +86,11 @@ input, select {
     width: 40px !important;
   }
 }
+
+.bracket-pair {
+  will-change: height;
+}
+
+.bracket-pair.bracket-pair-animated {
+  transition: height 0.4s ease;
+}
