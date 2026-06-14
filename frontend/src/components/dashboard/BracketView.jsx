@@ -148,7 +148,7 @@ function PairWithConnector({ match1, match2, targetPairHeight, getTeam, teamToPa
       width: '100%',
       height: pairHeight,
     }}>
-      <div style={{ flex: '0 0 auto', display: 'flex', flexDirection: 'column', minWidth: 0, width: '55%', height: '100%' }}>
+      <div style={{ flex: '0 0 auto', display: 'flex', flexDirection: 'column', minWidth: 0, width: '65%', height: '100%' }}>
         <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
           <div style={{ width: '100%' }}>{renderMatch(match1)}</div>
         </div>
@@ -235,7 +235,7 @@ function FinalSlide({ roundFixtures, getTeam, teamToParticipant, fixtureMap, rou
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: sfPairHeight }}>
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 0, height: '100%' }}>
-        <div style={{ flex: '1 1 45%', display: 'flex', flexDirection: 'column', minWidth: 0, height: '100%' }}>
+        <div style={{ flex: '1 1 50%', display: 'flex', flexDirection: 'column', minWidth: 0, height: '100%' }}>
           {sfMatches.map((f, i) => (
             <div key={f.id} style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
               <div style={{ width: '100%' }}>{renderMatch(f)}</div>
@@ -250,7 +250,7 @@ function FinalSlide({ roundFixtures, getTeam, teamToParticipant, fixtureMap, rou
           <line x1="40%" y1="50%" x2="100%" y2="50%" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
         </svg>
 
-        <div style={{ flex: '1 1 45%', position: 'relative', minWidth: 0, height: '100%' }}>
+        <div style={{ flex: '1 1 50%', position: 'relative', minWidth: 0, height: '100%' }}>
           <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, transform: 'translateY(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-accent)', marginBottom: 2, textAlign: 'center' }}>Final</div>
             {finalMatch && renderMatch(finalMatch)}
