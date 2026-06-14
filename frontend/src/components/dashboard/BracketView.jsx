@@ -247,21 +247,17 @@ function FinalSlide({ roundFixtures, getTeam, teamToParticipant, fixtureMap, rou
           <line x1="0" y1="25%" x2="40%" y2="25%" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
           <line x1="0" y1="75%" x2="40%" y2="75%" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
           <line x1="40%" y1="25%" x2="40%" y2="75%" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
-          <line x1="40%" y1="50%" x2="100%" y2="25%" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
+          <line x1="40%" y1="50%" x2="100%" y2="50%" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
         </svg>
 
-        <div style={{ flex: '1 1 45%', display: 'flex', flexDirection: 'column', minWidth: 0, height: '100%' }}>
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ width: '100%' }}>
-              <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-accent)', marginBottom: 2, textAlign: 'center' }}>Final</div>
-              {finalMatch && renderMatch(finalMatch)}
-            </div>
+        <div style={{ flex: '1 1 45%', position: 'relative', minWidth: 0, height: '100%' }}>
+          <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, transform: 'translateY(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-accent)', marginBottom: 2, textAlign: 'center' }}>Final</div>
+            {finalMatch && renderMatch(finalMatch)}
           </div>
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ width: '100%' }}>
-              <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-text-muted)', marginBottom: 2, textAlign: 'center' }}>3rd Place</div>
-              {thirdMatch && renderMatch(thirdMatch)}
-            </div>
+          <div style={{ position: 'absolute', top: 'calc(50% + 75px)', left: 0, right: 0, transform: 'translateY(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-text-muted)', marginBottom: 2, textAlign: 'center' }}>3rd Place</div>
+            {thirdMatch && renderMatch(thirdMatch)}
           </div>
         </div>
       </div>
