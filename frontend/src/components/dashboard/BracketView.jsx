@@ -13,7 +13,8 @@ const SLIDES = [
   { step: 1, current: 'Round of 32', next: 'Round of 16' },
   { step: 2, current: 'Round of 16', next: 'Quarter-finals' },
   { step: 3, current: 'Quarter-finals', next: 'Semi-finals' },
-  { step: 4, current: 'Semi-finals', next: null },
+  { step: 4, current: 'Semi-finals', next: 'Final' },
+  { step: 5, current: 'Final', next: null },
 ];
 
 function shortRound(key) {
@@ -148,7 +149,7 @@ function PairWithConnector({ match1, match2, targetPairHeight, getTeam, teamToPa
       width: '100%',
       height: pairHeight,
     }}>
-      <div style={{ flex: '0 0 auto', display: 'flex', flexDirection: 'column', minWidth: 0, width: '65%', height: '100%' }}>
+      <div style={{ flex: '0 0 auto', display: 'flex', flexDirection: 'column', minWidth: 0, width: '75%', height: '100%' }}>
         <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
           <div style={{ width: '100%' }}>{renderMatch(match1)}</div>
         </div>
@@ -202,8 +203,7 @@ function RoundColumn({ matches, getTeam, teamToParticipant, fixtureMap, roundPos
   );
 }
 
-function FinalSlide({ roundFixtures, getTeam, teamToParticipant, fixtureMap, roundPositions, onClick, sfPairHeight }) {
-  const sfMatches = roundFixtures['Semi-finals'] || [];
+function FinalStage({ roundFixtures, getTeam, teamToParticipant, fixtureMap, roundPositions, onClick }) {
   const finalMatch = (roundFixtures['Final'] || [])[0];
   const thirdMatch = (roundFixtures['3rd Place'] || [])[0];
 
@@ -233,33 +233,14 @@ function FinalSlide({ roundFixtures, getTeam, teamToParticipant, fixtureMap, rou
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: sfPairHeight }}>
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 0, height: '100%' }}>
-        <div style={{ flex: '1 1 50%', display: 'flex', flexDirection: 'column', minWidth: 0, height: '100%' }}>
-          {sfMatches.map((f, i) => (
-            <div key={f.id} style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
-              <div style={{ width: '100%' }}>{renderMatch(f)}</div>
-            </div>
-          ))}
-        </div>
-
-        <svg className="bracket-connector" style={{ overflow: 'visible', flex: '0 0 40px', height: '100%', minWidth: 30, maxWidth: 50 }}>
-          <line x1="0" y1="25%" x2="40%" y2="25%" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
-          <line x1="0" y1="75%" x2="40%" y2="75%" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
-          <line x1="40%" y1="25%" x2="40%" y2="75%" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
-          <line x1="40%" y1="50%" x2="100%" y2="50%" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
-        </svg>
-
-        <div style={{ flex: '1 1 50%', position: 'relative', minWidth: 0, height: '100%' }}>
-          <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, transform: 'translateY(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-accent)', marginBottom: 2, textAlign: 'center' }}>Final</div>
-            {finalMatch && renderMatch(finalMatch)}
-          </div>
-          <div style={{ position: 'absolute', top: 'calc(50% + 75px)', left: 0, right: 0, transform: 'translateY(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-text-muted)', marginBottom: 2, textAlign: 'center' }}>3rd Place</div>
-            {thirdMatch && renderMatch(thirdMatch)}
-          </div>
-        </div>
+    <div style={{ height: '100%', position: 'relative' }}>
+      <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, transform: 'translateY(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', width: '75%', margin: '0 auto' }}>
+        <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-accent)', marginBottom: 2, textAlign: 'center' }}>Final</div>
+        {finalMatch && renderMatch(finalMatch)}
+      </div>
+      <div style={{ position: 'absolute', top: 'calc(50% + 75px)', left: 0, right: 0, transform: 'translateY(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', width: '75%', margin: '0 auto' }}>
+        <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-text-muted)', marginBottom: 2, textAlign: 'center' }}>3rd Place</div>
+        {thirdMatch && renderMatch(thirdMatch)}
       </div>
     </div>
   );
@@ -301,12 +282,17 @@ export default function BracketView({ fixtures, allFixtures = [], teams, partici
   const sfPairHeight = r32Pairs > 0 ? r32Pairs * BASE_UNIT : BASE_UNIT;
 
   const initialIndex = (() => {
+    if (currentStage === 'Final' || currentStage === '3rd Place') return 4;
     const idx = SLIDES.findIndex(s => s.current === currentStage || s.next === currentStage);
     return idx >= 0 ? idx : 0;
   })();
   const [activeSlide, setActiveSlide] = useState(initialIndex);
 
   useEffect(() => {
+    if (currentStage === 'Final' || currentStage === '3rd Place') {
+      setActiveSlide(4);
+      return;
+    }
     const idx = SLIDES.findIndex(s => s.current === currentStage || s.next === currentStage);
     if (idx >= 0) setActiveSlide(idx);
   }, [currentStage]);
@@ -443,14 +429,13 @@ export default function BracketView({ fixtures, allFixtures = [], teams, partici
                 minWidth: 0,
               }}>
                 {isLast ? (
-                  <FinalSlide
+                  <FinalStage
                     roundFixtures={roundFixtures}
                     getTeam={getTeam}
                     teamToParticipant={teamToParticipant}
                     fixtureMap={fixtureMap}
                     roundPositions={roundPositions}
                     onClick={onClick}
-                    sfPairHeight={sfPairHeight}
                   />
                 ) : (
                   <RoundColumn
