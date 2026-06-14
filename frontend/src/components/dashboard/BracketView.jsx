@@ -236,17 +236,19 @@ function FinalStage({ roundFixtures, getTeam, teamToParticipant, fixtureMap, rou
 
   return (
     <div style={{ height: '100%', position: 'relative' }}>
-      <svg style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', overflow: 'visible' }}>
-        <line x1="0" y1={connectorY} x2="12.5%" y2={connectorY} stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
-      </svg>
-      <div style={{ position: 'absolute', top: connectorY, left: '50%', transform: 'translate(-50%, -50%)', width: '75%' }}>
-        {finalMatch && renderMatch(finalMatch)}
+      <div style={{ position: 'absolute', top: connectorY, left: 0, transform: 'translateY(-50%)', width: '100%' }}>
+        <div style={{
+          borderRadius: 'var(--radius-card)',
+          boxShadow: '0 0 30px rgba(239, 68, 68, 0.25), 0 0 80px rgba(239, 68, 68, 0.08)',
+        }}>
+          {finalMatch && renderMatch(finalMatch)}
+        </div>
       </div>
-      <div style={{ position: 'absolute', top: connectorY, left: '50%', transform: 'translateX(-50%)', marginTop: '-44px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-accent)', whiteSpace: 'nowrap' }}>Final</div>
-      <div style={{ position: 'absolute', top: `calc(${connectorY}px + 120px)`, left: '50%', transform: 'translate(-50%, -50%)', width: '75%' }}>
+      <div style={{ position: 'absolute', top: connectorY, left: 0, transform: 'translateY(-44px)', fontSize: 14, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', background: 'var(--gradient-accent)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', whiteSpace: 'nowrap' }}>🏆 Final</div>
+      <div style={{ position: 'absolute', top: `calc(${connectorY}px + 120px)`, left: 0, transform: 'translateY(-50%)', width: '100%' }}>
         {thirdMatch && renderMatch(thirdMatch)}
       </div>
-      <div style={{ position: 'absolute', top: `calc(${connectorY}px + 120px)`, left: '50%', transform: 'translateX(-50%)', marginTop: '-44px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>3rd Place</div>
+      <div style={{ position: 'absolute', top: `calc(${connectorY}px + 120px)`, left: 0, transform: 'translateY(-44px)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>3rd Place</div>
     </div>
   );
 }
@@ -281,10 +283,6 @@ export default function BracketView({ fixtures, allFixtures = [], teams, partici
   const qfPairs = Math.max(Math.floor(numQFMatches / 2), 1);
 
   const BASE_UNIT = 150;
-  const r32PairHeight = BASE_UNIT;
-  const r16PairHeight = r32Pairs > 0 && r16Pairs > 0 ? (r32Pairs / r16Pairs) * BASE_UNIT : BASE_UNIT;
-  const qfPairHeight = r32Pairs > 0 && qfPairs > 0 ? (r32Pairs / qfPairs) * BASE_UNIT : BASE_UNIT;
-  const sfPairHeight = r32Pairs > 0 ? r32Pairs * BASE_UNIT : BASE_UNIT;
 
   const initialIndex = (() => {
     if (currentStage === 'Final' || currentStage === '3rd Place') return 4;
@@ -348,29 +346,18 @@ export default function BracketView({ fixtures, allFixtures = [], teams, partici
     'Quarter-finals': qfPairs,
     'Semi-finals': 1,
   };
-  const propHeights = {
-    'Round of 32': r32PairHeight,
-    'Round of 16': r16PairHeight,
-    'Quarter-finals': qfPairHeight,
-    'Semi-finals': sfPairHeight,
-  };
 
   const pairHeightByRound = {};
   if (activeIdx < 0) {
-    Object.assign(pairHeightByRound, propHeights);
-    pairHeightByRound['Semi-finals'] = BASE_UNIT;
+    for (const key of roundOrder) {
+      pairHeightByRound[key] = BASE_UNIT;
+    }
   } else {
     const activePairs = roundPairs[roundOrder[activeIdx]];
     const totalHeight = activePairs * BASE_UNIT;
     for (let i = 0; i < roundOrder.length; i++) {
       const key = roundOrder[i];
-      if (i < activeIdx) {
-        pairHeightByRound[key] = propHeights[key];
-      } else if (i === activeIdx) {
-        pairHeightByRound[key] = BASE_UNIT;
-      } else {
-        pairHeightByRound[key] = totalHeight / roundPairs[key];
-      }
+      pairHeightByRound[key] = i <= activeIdx ? BASE_UNIT : totalHeight / roundPairs[key];
     }
   }
 
@@ -475,7 +462,7 @@ export default function BracketView({ fixtures, allFixtures = [], teams, partici
             return (
               <div key={si} className="bracket-slide" style={{
                 flex: '0 0 auto',
-                width: slidePx > 0 ? slidePx : `${isLast ? 100 : 80}%`,
+                width: isLast ? '100%' : (slidePx > 0 ? slidePx : '80%'),
                 minWidth: 0,
               }}>
                 {isLast ? (

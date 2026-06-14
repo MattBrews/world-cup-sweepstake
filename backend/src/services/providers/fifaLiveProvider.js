@@ -140,8 +140,10 @@ export class FifaLiveProvider extends DataService {
         const subs = data.HomeTeam?.Substitutions || [];
         for (const s of data.AwayTeam?.Substitutions || []) subs.push(s);
         for (const s of subs) {
-          const playerOff = s.PlayerOffName?.[0]?.Description || null;
-          const playerOn = s.PlayerOnName?.[0]?.Description || null;
+          const playerOffId = s.IdPlayerOff || s.PlayerOff?.IdPlayer || s.PlayerOff?.Id || null;
+          const playerOnId = s.IdPlayerOn || s.PlayerOn?.IdPlayer || s.PlayerOn?.Id || null;
+          const playerOff = s.PlayerOffName?.[0]?.Description || (playerOffId && findPlayerName(data, s.IdTeam, playerOffId)) || null;
+          const playerOn = s.PlayerOnName?.[0]?.Description || (playerOnId && findPlayerName(data, s.IdTeam, playerOnId)) || null;
           db.prepare(
             `INSERT INTO match_events (match_id, team_id, type, minute, period, player_name, additional_info)
              VALUES (?, ?, 'SUB', ?, ?, ?, ?)`
@@ -217,7 +219,7 @@ export class FifaLiveProvider extends DataService {
     const db = getDb();
 
     const fixtures = db.prepare(
-      `SELECT id, api_match_id, lifecycle_state, last_synced_at FROM cached_fixtures
+      `SELECT id, api_match_id, date, lifecycle_state, last_synced_at FROM cached_fixtures
        WHERE api_match_id IS NOT NULL
          AND lifecycle_state IN ('AWAITING', 'IN_PROGRESS')`
     ).all();
@@ -248,24 +250,61 @@ export class FifaLiveProvider extends DataService {
         const awayScore = data.AwayTeam?.Score ?? null;
         const period = data.Period;
 
-        // Derive current minute from API field or fall back to max event minute
-        let currentMinute = data.MatchTime || data.MatchMinute || data.Minute || null;
-        if (currentMinute == null) {
-          const allEvents = [
-            ...(data.HomeTeam?.Goals || []).map(g => g.Minute),
-            ...(data.AwayTeam?.Goals || []).map(g => g.Minute),
-            ...(data.HomeTeam?.Bookings || []).map(b => b.Minute),
-            ...(data.AwayTeam?.Bookings || []).map(b => b.Minute),
-            ...(data.HomeTeam?.Substitutions || []).map(s => s.Minute),
-            ...(data.AwayTeam?.Substitutions || []).map(s => s.Minute),
-          ].filter(Boolean);
-          const parsed = allEvents.map(m => {
-            const str = String(m);
-            const match = str.match(/^(\d+)(?:\+(\d+))?/);
-            if (!match) return 0;
-            return parseInt(match[1]) + (match[2] ? parseInt(match[2]) : 0);
-          });
-          if (parsed.length > 0) currentMinute = Math.max(...parsed);
+        // Derive current minute from API clock and event-based max, then take the higher
+        const matchTimeRaw = data.MatchTime || data.MatchMinute || data.Minute || null;
+        const matchTimeMinute = matchTimeRaw != null ? parseInt(String(matchTimeRaw)) ?? 0 : null;
+
+        const allEvents = [
+          ...(data.HomeTeam?.Goals || []).map(g => g.Minute),
+          ...(data.AwayTeam?.Goals || []).map(g => g.Minute),
+          ...(data.HomeTeam?.Bookings || []).map(b => b.Minute),
+          ...(data.AwayTeam?.Bookings || []).map(b => b.Minute),
+          ...(data.HomeTeam?.Substitutions || []).map(s => s.Minute),
+          ...(data.AwayTeam?.Substitutions || []).map(s => s.Minute),
+        ].filter(Boolean);
+        const parsed = allEvents.map(m => {
+          const str = String(m);
+          const match = str.match(/^(\d+)(?:\+(\d+))?/);
+          if (!match) return 0;
+          return parseInt(match[1]) + (match[2] ? parseInt(match[2]) : 0);
+        });
+        const eventMaxMinute = parsed.length > 0 ? Math.max(...parsed) : null;
+
+        let currentMinute = Math.max(
+          matchTimeMinute ?? 0,
+          eventMaxMinute ?? 0
+        ) || null;
+
+        // Fallback: if match is in 2nd half+ (period > 1) but minute is stuck at 45
+        // because no events have occurred since first half, estimate from elapsed time
+        if ((currentMinute == null || currentMinute <= 45) && period > 1) {
+          const matchStart = fixture.date ? new Date(fixture.date) : null;
+          if (matchStart && !isNaN(matchStart.getTime())) {
+            const elapsedMin = (Date.now() - matchStart.getTime()) / 60000;
+            if (elapsedMin > 60) { // past 45' first half + 15' halftime
+              const estimated = Math.round(Math.max(45, elapsedMin - 15));
+              if (estimated > (currentMinute || 0)) {
+                currentMinute = estimated;
+              }
+            }
+          }
+        }
+
+        // Derive display-formatted minute string
+        let minuteDisplay = null;
+        if (matchTimeRaw != null) {
+          minuteDisplay = String(matchTimeRaw);
+        } else if (eventMaxMinute != null && allEvents.length > 0) {
+          const maxVal = Math.max(...parsed);
+          for (let i = parsed.length - 1; i >= 0; i--) {
+            if (parsed[i] === maxVal) {
+              minuteDisplay = String(allEvents[i]);
+              break;
+            }
+          }
+        }
+        if (minuteDisplay == null || (currentMinute != null && currentMinute > (parseInt(minuteDisplay) || 0))) {
+          minuteDisplay = String(currentMinute);
         }
 
         let newState = fixture.lifecycle_state;
@@ -313,6 +352,11 @@ export class FifaLiveProvider extends DataService {
           updateValues.push(parseInt(currentMinute) || 0);
         }
 
+        if (minuteDisplay != null) {
+          updateFields.push('current_minute_display = ?');
+          updateValues.push(minuteDisplay);
+        }
+
         if (period != null) {
           updateFields.push('period = ?');
           updateValues.push(period);
@@ -353,8 +397,10 @@ export class FifaLiveProvider extends DataService {
           const subs = data.HomeTeam?.Substitutions || [];
           for (const s of data.AwayTeam?.Substitutions || []) subs.push(s);
           for (const s of subs) {
-            const playerOff = s.PlayerOffName?.[0]?.Description || null;
-            const playerOn = s.PlayerOnName?.[0]?.Description || null;
+            const playerOffId = s.IdPlayerOff || s.PlayerOff?.IdPlayer || s.PlayerOff?.Id || null;
+            const playerOnId = s.IdPlayerOn || s.PlayerOn?.IdPlayer || s.PlayerOn?.Id || null;
+            const playerOff = s.PlayerOffName?.[0]?.Description || (playerOffId && findPlayerName(data, s.IdTeam, playerOffId)) || null;
+            const playerOn = s.PlayerOnName?.[0]?.Description || (playerOnId && findPlayerName(data, s.IdTeam, playerOnId)) || null;
             db.prepare(
               `INSERT INTO match_events (match_id, team_id, type, minute, period, player_name, additional_info)
                VALUES (?, ?, 'SUB', ?, ?, ?, ?)`

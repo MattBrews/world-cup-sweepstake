@@ -130,7 +130,7 @@ export default function MatchDetailModal({ publicId, matchId, onClose }) {
             <div style={{ fontSize: 11, color: 'var(--color-text-muted)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
               {fixture ? `${shortRound(fixture.stage)}${fixture.stage === 'Group Stage' && fixture.round ? ' · ' + fixture.round : ''}` : ''}
               {fixture && (fixture.status === 'IN_PROGRESS' || fixture.lifecycle_state === 'IN_PROGRESS') && (
-                <span style={{ color: 'var(--color-accent)' }}>🔴 LIVE{fixture.current_minute != null ? ` ${fixture.current_minute}'` : ''}</span>
+                <span style={{ color: 'var(--color-accent)' }}>🔴 LIVE{fixture.current_minute_display ? ` ${fixture.current_minute_display}'` : fixture.current_minute != null ? ` ${fixture.current_minute}'` : ''}</span>
               )}
               {fixture && fixture.status === 'FT' && (
                 <span style={{ color: 'var(--color-text-muted)', fontSize: 10 }}>FT</span>
@@ -249,14 +249,25 @@ function TimelineTab({ events, homeTeamId, awayTeamId, homeTeam, awayTeam, fixtu
   }
 
   const validEvents = events.filter(e => parseMinute(e.minute) !== null);
+  // Sort by period then minute for correct halftime ordering
+  validEvents.sort((a, b) => (a.period || 0) - (b.period || 0) || parseMinute(a.minute) - parseMinute(b.minute));
+
   const homeEvents = validEvents.filter(e => parseInt(e.team_id) === parseInt(homeTeamId));
   const awayEvents = validEvents.filter(e => parseInt(e.team_id) === parseInt(awayTeamId));
   const neutralEvents = validEvents.filter(e => !e.team_id || (parseInt(e.team_id) !== parseInt(homeTeamId) && parseInt(e.team_id) !== parseInt(awayTeamId)));
 
-  const allMinutes = [...new Set(validEvents.map(e => parseMinute(e.minute)))].sort((a, b) => a - b);
+  const allMinutes = [...new Set(validEvents.map(e => parseMinute(e.minute)))];
+  // Sort by period first, then minute — ensures 45+5 (first half, parsed 50)
+  // comes before 47' (second half, parsed 47) in the timeline
+  allMinutes.sort((a, b) => {
+    const periodA = validEvents.find(e => parseMinute(e.minute) === a)?.period || 0;
+    const periodB = validEvents.find(e => parseMinute(e.minute) === b)?.period || 0;
+    if (periodA !== periodB) return periodA - periodB;
+    return a - b;
+  });
 
-  const halftimeReached = fixture?.status === 'FT' || fixture?.current_minute > 45;
-  const hasSecondHalfEvents = allMinutes.some(m => m > 45);
+  const halftimeReached = fixture?.status === 'FT' || fixture?.current_minute > 45 || validEvents.some(e => (e.period || 0) >= 2);
+  const hasSecondHalfEvents = validEvents.some(e => (e.period || 0) >= 2);
   const lastMinute = allMinutes.length > 0 ? allMinutes[allMinutes.length - 1] : null;
   const showHalftimeEnd = halftimeReached && !hasSecondHalfEvents && lastMinute != null && lastMinute <= 45;
 
@@ -284,12 +295,26 @@ function TimelineTab({ events, homeTeamId, awayTeamId, homeTeam, awayTeam, fixtu
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         {allMinutes.map((minute, idx) => {
           const prevMinute = idx > 0 ? allMinutes[idx - 1] : null;
-          const showHalftime = prevMinute !== null && prevMinute <= 45 && minute > 45;
 
           const minuteEvents = validEvents.filter(e => parseMinute(e.minute) === minute).sort((a, b) => (a.id || 0) - (b.id || 0));
+          const showHalftime = (() => {
+            if (prevMinute === null || minuteEvents.length === 0) return false;
+            const prevPeriods = validEvents.filter(e => parseMinute(e.minute) === prevMinute).map(e => e.period || 0);
+            const curPeriods = minuteEvents.map(e => e.period || 0);
+            return Math.min(...curPeriods) > Math.max(...prevPeriods);
+          })();
+
           const homeMinEvents = minuteEvents.filter(e => parseInt(e.team_id) === parseInt(homeTeamId));
           const awayMinEvents = minuteEvents.filter(e => parseInt(e.team_id) === parseInt(awayTeamId));
           const neutralMinEvents = minuteEvents.filter(e => !e.team_id || (parseInt(e.team_id) !== parseInt(homeTeamId) && parseInt(e.team_id) !== parseInt(awayTeamId)));
+
+          function renderMinuteLabel() {
+            const raw = minuteEvents[0]?.minute;
+            if (raw && !/^\d+$/.test(String(raw))) {
+              return `${raw}'`;
+            }
+            return `${minute}'`;
+          }
 
           return (
             <React.Fragment key={minute}>
@@ -303,7 +328,7 @@ function TimelineTab({ events, homeTeamId, awayTeamId, homeTeam, awayTeam, fixtu
                   ))}
                 </div>
                 <div style={{ width: 40, textAlign: 'center', fontWeight: 700, color: 'var(--color-text-muted)', fontSize: 12, paddingTop: 4, flexShrink: 0 }}>
-                  {formatMinute(minute)}
+                  {renderMinuteLabel()}
                 </div>
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2 }}>
                   {awayMinEvents.map((e, i) => (
@@ -322,7 +347,7 @@ function TimelineTab({ events, homeTeamId, awayTeamId, homeTeam, awayTeam, fixtu
             <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-text-muted)', marginBottom: 4 }}>Other</div>
             {neutralEvents.sort((a, b) => (a.id || 0) - (b.id || 0)).map((e, i) => (
               <div key={e.id || i} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, padding: '2px 0' }}>
-                <span style={{ width: 30, fontWeight: 700, color: 'var(--color-text-muted)' }}>{formatMinute(parseMinute(e.minute))}</span>
+                <span style={{ width: 30, fontWeight: 700, color: 'var(--color-text-muted)' }}>{e.minute && !/^\d+$/.test(String(e.minute)) ? `${e.minute}'` : `${parseMinute(e.minute)}'`}</span>
                 {renderEventContent(e, 'neutral')}
               </div>
             ))}

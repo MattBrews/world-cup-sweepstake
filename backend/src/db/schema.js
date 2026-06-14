@@ -104,6 +104,7 @@ export function runMigrations() {
   try { db.exec("ALTER TABLE cached_fixtures ADD COLUMN last_synced_at TEXT"); } catch {}
   try { db.exec("ALTER TABLE cached_fixtures ADD COLUMN data_sources TEXT"); } catch {}
   try { db.exec("ALTER TABLE cached_fixtures ADD COLUMN current_minute INTEGER"); } catch {}
+  try { db.exec("ALTER TABLE cached_fixtures ADD COLUMN current_minute_display TEXT"); } catch {}
   try { db.exec("ALTER TABLE cached_fixtures ADD COLUMN period INTEGER"); } catch {}
 
   try { db.exec("ALTER TABLE cached_fixtures ADD COLUMN home_placeholder TEXT"); } catch {}
