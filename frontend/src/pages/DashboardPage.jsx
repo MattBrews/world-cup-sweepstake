@@ -24,7 +24,12 @@ export default function DashboardPage() {
       getDashboard(publicId).then(d => {
         setData(d);
         if (isInitial) {
-          setActiveStage(searchParams.get('stage') || d.currentStage);
+          const stageFromUrl = searchParams.get('stage');
+          if (stageFromUrl) {
+            setActiveStage(knockoutStages.includes(stageFromUrl) ? 'Knockout' : stageFromUrl);
+          } else {
+            setActiveStage(knockoutStages.includes(d.currentStage) ? 'Knockout' : d.currentStage);
+          }
         }
       }).catch(() => {}),
       getRecentResults(publicId).then(setRecentResults).catch(() => {}),
@@ -58,9 +63,11 @@ export default function DashboardPage() {
   }
 
   const knockoutStages = ['Round of 32', 'Round of 16', 'Quarter-finals', 'Semi-finals', '3rd Place', 'Final'];
-  const isKnockout = knockoutStages.includes(activeStage);
+  const isKnockout = activeStage === 'Knockout';
 
-  const stageFixtures = data.fixtures.filter(f => f.stage === activeStage);
+  const stageFixtures = isKnockout
+    ? data.fixtures.filter(f => knockoutStages.includes(f.stage))
+    : data.fixtures.filter(f => f.stage === activeStage);
   const knockoutFixtures = data.fixtures.filter(f => knockoutStages.includes(f.stage));
   const stageTotal = stageFixtures.length;
   const stageCompleted = stageFixtures.filter(f => f.status === 'FT').length;
@@ -226,7 +233,7 @@ export default function DashboardPage() {
           allFixtures={data.fixtures}
           teams={data.teams}
           participants={data.participants}
-          activeRound={activeStage}
+          currentStage={data.currentStage}
           onClick={setSelectedMatchId}
         />
       ) : (

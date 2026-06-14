@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-const STAGES = ['Group Stage', 'Round of 32', 'Round of 16', 'Quarter-finals', 'Semi-finals', '3rd Place', 'Final'];
+const STAGES = ['Group Stage', 'Knockout'];
 
 export default function StageNav({ current, activeStage, onSelect }) {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 600);
@@ -43,8 +43,6 @@ export default function StageNav({ current, activeStage, onSelect }) {
     <div style={{
       display: 'flex',
       gap: 4,
-      overflowX: 'auto',
-      paddingBottom: 4,
     }}>
       {STAGES.map((stage, i) => {
         const isActive = stage === activeStage;
@@ -57,7 +55,7 @@ export default function StageNav({ current, activeStage, onSelect }) {
             onClick={() => onSelect?.(stage)}
             style={{
               flex: 1,
-              padding: '8px 8px',
+              padding: '8px 16px',
               borderRadius: 20,
               fontSize: 12,
               fontWeight: 600,
