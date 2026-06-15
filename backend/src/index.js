@@ -8,12 +8,14 @@ import { config } from './config.js';
 import { getDb } from './db/connection.js';
 import { runMigrations } from './db/schema.js';
 import { syncAll, syncLive, fullRefresh, getSyncStatus } from './services/syncEngine.js';
+import { runV2Migrations } from './v2/db/schema.js';
 
 import authRoutes from './routes/auth.js';
 import sweepstakesRoutes from './routes/sweepstakes.js';
 import participantsRoutes from './routes/participants.js';
 import dashboardRoutes from './routes/dashboard.js';
 import configRoutes from './routes/config.js';
+import v2DataRoutes from './routes/v2Data.js';
 
 const app = express();
 
@@ -31,12 +33,14 @@ app.use(session({
 }));
 
 runMigrations();
+runV2Migrations();
 
 app.use('/api/auth', authRoutes);
 app.use('/api/sweepstakes', sweepstakesRoutes);
 app.use('/api/sweepstakes', participantsRoutes);
 app.use('/api/sweepstakes', dashboardRoutes);
 app.use('/api', configRoutes);
+app.use('/api', v2DataRoutes);
 
 app.post('/api/sync', async (req, res) => {
   try {

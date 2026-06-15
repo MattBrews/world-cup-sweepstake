@@ -101,6 +101,16 @@ export default function AdminDashboardPage() {
           }}>
             Full Refresh
           </button>
+          <Link to="/admin/v2-data" style={{
+            padding: '8px 16px', borderRadius: 8,
+            background: 'rgba(100,200,255,0.1)',
+            color: 'var(--color-accent)',
+            fontSize: 13, fontWeight: 600,
+            textDecoration: 'none',
+            border: '1px solid rgba(100,200,255,0.15)',
+          }}>
+            V2 Data
+          </Link>
           <button onClick={handleLogout} style={{
             padding: '8px 16px',
             borderRadius: 8,

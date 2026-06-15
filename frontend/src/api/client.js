@@ -113,3 +113,7 @@ export function getStats(slug, type) {
   const qs = type ? `?type=${type}` : '';
   return request(`/sweepstakes/${slug}/stats${qs}`);
 }
+
+export function getV2Data() {
+  return request('/v2/data');
+}
