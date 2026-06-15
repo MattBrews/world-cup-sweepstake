@@ -35,9 +35,9 @@ export class OpenFootballTeamsProvider extends TeamsProvider {
     const seen = {};
     for (const m of data.matches || []) {
       for (const name of [m.team1, m.team2]) {
-        if (!seen[name]) {
-          const code = FLAGS[name] || null;
-          const logoUrl = code ? `https://hatscripts.github.io/circle-flags/flags/${code}.svg` : null;
+        if (!seen[name] && FLAGS[name]) {
+          const code = FLAGS[name];
+          const logoUrl = `https://hatscripts.github.io/circle-flags/flags/${code}.svg`;
           seen[name] = { name, code, logo_url: logoUrl };
         }
       }

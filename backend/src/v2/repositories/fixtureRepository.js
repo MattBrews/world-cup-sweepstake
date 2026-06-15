@@ -6,11 +6,15 @@ export class FixtureRepository {
   }
 
   findByComposite(competitionId, homeTeamId, awayTeamId, date, round) {
+    const r = round || null;
     return this.db.prepare(
       `SELECT * FROM competition_fixtures
-       WHERE competition_id = ? AND home_team_id = ? AND away_team_id = ?
-       AND date = ? AND round = ?`
-    ).get(competitionId, homeTeamId, awayTeamId, date, round || null);
+       WHERE competition_id = ?
+       AND ((? IS NULL AND home_team_id IS NULL) OR home_team_id = ?)
+       AND ((? IS NULL AND away_team_id IS NULL) OR away_team_id = ?)
+       AND date = ?
+       AND ((? IS NULL AND round IS NULL) OR round = ?)`
+    ).get(competitionId, homeTeamId, homeTeamId, awayTeamId, awayTeamId, date, r, r);
   }
 
   findById(id) {

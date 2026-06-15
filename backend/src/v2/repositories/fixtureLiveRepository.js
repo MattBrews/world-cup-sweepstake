@@ -7,7 +7,7 @@ export class FixtureLiveRepository {
 
   upsert(liveData) {
     const { fixture_id, home_score, away_score, home_ht_score, away_ht_score, status, current_minute, period } = liveData;
-    const existing = this.db.prepare('SELECT id FROM fixture_live WHERE fixture_id = ?').get(fixture_id);
+    const existing = this.db.prepare('SELECT fixture_id FROM fixture_live WHERE fixture_id = ?').get(fixture_id);
     if (existing) {
       this.db.prepare(`
         UPDATE fixture_live SET

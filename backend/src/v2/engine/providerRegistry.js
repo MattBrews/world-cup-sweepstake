@@ -10,9 +10,7 @@ export class ProviderRegistry {
   }
 
   get(interfaceName) {
-    const impl = this._interfaces[interfaceName];
-    if (!impl) throw new Error(`No provider registered for ${interfaceName}`);
-    return impl;
+    return this._interfaces[interfaceName] || null;
   }
 
   getAll() {
