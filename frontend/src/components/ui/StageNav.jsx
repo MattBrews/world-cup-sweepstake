@@ -37,7 +37,8 @@ export default function StageNav({ current, activeStage, onSelect }) {
     );
   }
 
-  const currentIdx = STAGES.indexOf(activeStage || current);
+  const resolved = activeStage || current;
+  const currentIdx = STAGES.indexOf(resolved);
 
   return (
     <div style={{
@@ -45,7 +46,7 @@ export default function StageNav({ current, activeStage, onSelect }) {
       gap: 4,
     }}>
       {STAGES.map((stage, i) => {
-        const isActive = stage === activeStage;
+        const isActive = stage === resolved;
         const isPast = currentIdx !== -1 && i < currentIdx;
         const isCurrent = stage === current;
 

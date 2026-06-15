@@ -27,7 +27,7 @@ export default function DashboardPage() {
           const stageFromUrl = searchParams.get('stage');
           if (stageFromUrl) {
             setActiveStage(knockoutStages.includes(stageFromUrl) ? 'Knockout' : stageFromUrl);
-          } else {
+          } else if (d.currentStage) {
             setActiveStage(knockoutStages.includes(d.currentStage) ? 'Knockout' : d.currentStage);
           }
         }
@@ -39,7 +39,7 @@ export default function DashboardPage() {
 
     const interval = setInterval(() => {
       fetchData(false);
-    }, 30000);
+    }, 15000);
 
     return () => clearInterval(interval);
   }, [publicId]);
@@ -63,14 +63,20 @@ export default function DashboardPage() {
   }
 
   const knockoutStages = ['Round of 32', 'Round of 16', 'Quarter-finals', 'Semi-finals', '3rd Place', 'Final'];
-  const isKnockout = activeStage === 'Knockout';
+  const fallbackStage = knockoutStages.includes(data.currentStage) ? 'Knockout' : data.currentStage;
+  const resolvedStage = activeStage || fallbackStage;
+  const isKnockout = resolvedStage === 'Knockout';
+
+  const fixtureStatus = {};
+  for (const f of data.fixtures) fixtureStatus[f.id] = f.status;
+  for (const f of recentResults) if (fixtureStatus[f.id] !== 'FT') fixtureStatus[f.id] = f.status;
 
   const stageFixtures = isKnockout
     ? data.fixtures.filter(f => knockoutStages.includes(f.stage))
-    : data.fixtures.filter(f => f.stage === activeStage);
+    : data.fixtures.filter(f => f.stage === resolvedStage);
   const knockoutFixtures = data.fixtures.filter(f => knockoutStages.includes(f.stage));
   const stageTotal = stageFixtures.length;
-  const stageCompleted = stageFixtures.filter(f => f.status === 'FT').length;
+  const stageCompleted = stageFixtures.filter(f => fixtureStatus[f.id] === 'FT').length;
   const liveFixtures = data.fixtures.filter(f => f.status === 'IN_PROGRESS' || f.lifecycle_state === 'IN_PROGRESS');
 
   const groupedStandings = {};
@@ -223,7 +229,7 @@ export default function DashboardPage() {
         <ProgressBar
           current={stageCompleted}
           total={stageTotal}
-          statusText={activeStage}
+          statusText={resolvedStage}
         />
       </div>
 

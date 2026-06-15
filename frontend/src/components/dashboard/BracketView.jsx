@@ -1,5 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 
+const tokenColors = [
+  'var(--token-1)', 'var(--token-2)', 'var(--token-3)',
+  'var(--token-4)', 'var(--token-5)', 'var(--token-6)',
+  'var(--token-7)', 'var(--token-8)', 'var(--token-9)',
+];
+
 const BRACKET_ROUNDS = [
   { key: 'Round of 32', label: 'R32' },
   { key: 'Round of 16', label: 'R16' },
@@ -8,6 +14,11 @@ const BRACKET_ROUNDS = [
   { key: '3rd Place', label: '3rd' },
   { key: 'Final', label: 'Final' },
 ];
+
+function roundColor(stage) {
+  const idx = BRACKET_ROUNDS.findIndex(r => r.key === stage);
+  return idx >= 0 ? tokenColors[idx % tokenColors.length] : 'rgba(255,255,255,0.1)';
+}
 
 const SLIDES = [
   { step: 1, current: 'Round of 32', next: 'Round of 16' },
@@ -64,23 +75,26 @@ function feederLabel(label, fixtureMap, roundPositions) {
   return label;
 }
 
-function MatchCardSmall({ fixture, homeTeam, awayTeam, teamToParticipant, isFinished, isLive, onClick, homeLabel, awayLabel }) {
+function MatchCardSmall({ fixture, homeTeam, awayTeam, teamToParticipant, isFinished, isLive, onClick, homeLabel, awayLabel, color }) {
+  const borderColor = color || roundColor(fixture.stage);
   const displayHomeLabel = homeLabel || (fixture.home_team_id === null ? 'TBD' : '?');
   const displayAwayLabel = awayLabel || (fixture.away_team_id === null ? 'TBD' : '?');
   const homeParticipant = teamToParticipant[fixture.home_team_id];
   const awayParticipant = teamToParticipant[fixture.away_team_id];
 
   return (
-    <div
-      className="glass bracket-card"
-      onClick={onClick && (isFinished || isLive) ? () => onClick(fixture.id) : undefined}
-      style={{
-        padding: '12px 14px',
-        borderLeft: `3px solid ${isFinished ? 'var(--token-7)' : isLive ? 'var(--color-accent)' : 'rgba(255,255,255,0.1)'}`,
-        cursor: onClick && (isFinished || isLive) ? 'pointer' : undefined,
-        transition: 'transform 0.15s, box-shadow 0.15s',
-        width: '100%',
-      }}
+      <div
+        className="glass bracket-card"
+        onClick={onClick && (isFinished || isLive) ? () => onClick(fixture.id) : undefined}
+        style={{
+          padding: '12px 14px',
+          border: `1px solid ${isLive ? 'var(--color-accent)' : borderColor}`,
+          boxShadow: `0 0 20px ${isLive ? 'var(--color-accent)' : borderColor}40, inset 0 0 0 1px ${isLive ? 'var(--color-accent)' : borderColor}20`,
+          opacity: isFinished || isLive ? 1 : 0.7,
+          cursor: onClick && (isFinished || isLive) ? 'pointer' : undefined,
+          transition: 'transform 0.15s, box-shadow 0.15s',
+          width: '100%',
+        }}
       onMouseEnter={onClick && (isFinished || isLive) ? e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.3)'; } : undefined}
       onMouseLeave={onClick && (isFinished || isLive) ? e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = ''; } : undefined}
     >

@@ -33,6 +33,8 @@ export default function StatsPage() {
   function setTab(tab) {
     const params = { tab };
     if (view !== 'team') params.group = view;
+    setStats([]);
+    setStatsLoading(true);
     setSearchParams(params);
   }
 
@@ -51,6 +53,7 @@ export default function StatsPage() {
 
   useEffect(() => {
     if (!data) return;
+    setStats([]);
     setStatsLoading(true);
     getStats(publicId, activeTab)
       .then(s => setStats(s || []))
@@ -336,6 +339,7 @@ function RankCell({ rank }) {
 }
 
 function StandingsView({ stats, teamMap, participants, view }) {
+  if (!Array.isArray(stats)) return <Empty />;
   const teamStats = stats.map(s => {
     const p = participants.find(p => p.team_id === s.team_id);
     return {
@@ -404,6 +408,7 @@ function StandingsView({ stats, teamMap, participants, view }) {
 }
 
 function CardsView({ stats, teamMap, participants, view }) {
+  if (!Array.isArray(stats)) return <Empty />;
   const cardStats = stats.map(s => {
     const p = participants.find(p => p.team_id === s.team_id);
     return {
@@ -464,6 +469,7 @@ function CardsView({ stats, teamMap, participants, view }) {
 }
 
 function GoalsView({ stats, teamMap, participants, view }) {
+  if (!Array.isArray(stats)) return <Empty />;
   const goalsStats = stats.map(s => {
     const p = participants.find(p => p.team_id === s.team_id);
     return {
@@ -524,6 +530,7 @@ function GoalsView({ stats, teamMap, participants, view }) {
 }
 
 function ScorersView({ stats, participants }) {
+  if (!Array.isArray(stats)) return <Empty />;
   const cols = '50px';
 
   return (
@@ -581,7 +588,7 @@ function ScorersView({ stats, participants }) {
 }
 
 function RecordsView({ stats, participants }) {
-  if (!stats || Object.keys(stats).length === 0) {
+  if (!stats || Array.isArray(stats) || Object.keys(stats).length === 0) {
     return <Empty />;
   }
 
