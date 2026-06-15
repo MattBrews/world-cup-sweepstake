@@ -59,10 +59,11 @@ export class FixtureRepository {
 
   findAwaitingOrLive() {
     return this.db.prepare(`
-      SELECT f.*, fl.status AS live_status, fl.current_minute, fl.period
+      SELECT f.*, COALESCE(fl.status, 'SCHEDULED') AS live_status, fl.current_minute, fl.period
       FROM competition_fixtures f
-      JOIN fixture_live fl ON fl.fixture_id = f.id
+      LEFT JOIN fixture_live fl ON fl.fixture_id = f.id
       WHERE fl.status IN ('AWAITING', 'LIVE')
+         OR (fl.status IS NULL AND f.date <= datetime('now', '+30 minutes'))
     `).all();
   }
 

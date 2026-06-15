@@ -14,6 +14,11 @@ export { SyncEngineV2 } from './engine/syncEngine.js';
 export { ProviderRegistry, createDefaultRegistry } from './engine/providerRegistry.js';
 export { OpenFootballTeamsProvider } from './providers/openFootballTeamsProvider.js';
 export { OpenFootballFixtureProvider } from './providers/openFootballFixtureProvider.js';
+export { FifaLiveClient } from './providers/clients/fifaLiveClient.js';
+export { FifaCalendarMappingProvider } from './providers/fifaCalendarMappingProvider.js';
+export { FifaScoreProvider } from './providers/fifaScoreProvider.js';
+export { FifaMatchDetailProvider } from './providers/fifaMatchDetailProvider.js';
+export { FifaTvChannelProvider } from './providers/fifaTvChannelProvider.js';
 
 export function initializeV2() {
   runV2Migrations();
