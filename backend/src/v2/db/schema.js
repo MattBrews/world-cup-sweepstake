@@ -159,6 +159,15 @@ export function runV2Migrations() {
       PRIMARY KEY (fixture_id, provider_name)
     );
 
+    CREATE TABLE IF NOT EXISTS comparison_results (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      entity_type TEXT NOT NULL,
+      diff_type   TEXT NOT NULL,
+      v1_data     TEXT,
+      v2_data     TEXT,
+      created_at  TEXT DEFAULT (datetime('now'))
+    );
+
     CREATE TABLE IF NOT EXISTS sync_log (
       id          INTEGER PRIMARY KEY AUTOINCREMENT,
       provider    TEXT NOT NULL,

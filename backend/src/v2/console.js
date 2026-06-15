@@ -42,8 +42,23 @@ async function main() {
       console.table(log);
       break;
     }
+    case '--compare': {
+      const { DataComparator } = await import('./validation/comparator.js');
+      const c = new DataComparator();
+      const result = await c.compare();
+      console.log(`Comparison: ${result.total} total, ${result.matches} match, ${result.mismatches} mismatch, ${result.onlyV1} onlyV1, ${result.onlyV2} onlyV2`);
+      const dbV2 = getV2Db();
+      const details = dbV2.prepare(
+        "SELECT * FROM comparison_results WHERE diff_type != 'MATCH' ORDER BY entity_type, created_at LIMIT 30"
+      ).all();
+      if (details.length) {
+        console.log('\nNon-matching entries:');
+        console.table(details);
+      }
+      break;
+    }
     default:
-      console.log('Usage: node backend/src/v2/console.js [--dump|--fixtures|--teams|--sync-stats]');
+      console.log('Usage: node backend/src/v2/console.js [--dump|--fixtures|--teams|--sync-stats|--compare]');
   }
 }
 

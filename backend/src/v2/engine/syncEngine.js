@@ -1,4 +1,5 @@
 import { getV2Db } from '../db/connection.js';
+import { DataComparator } from '../validation/comparator.js';
 
 export class SyncEngineV2 {
   constructor(providers, repos) {
@@ -83,7 +84,11 @@ export class SyncEngineV2 {
         logSync('fifa-tv', 'syncTvChannels', 'ok', updated);
       }
 
-      return { status: 'ok' };
+      const comparator = new DataComparator();
+      const comparison = await comparator.compare();
+      logSync('comparator', 'compare', 'ok', comparison.total);
+
+      return { status: 'ok', comparison };
     } catch (err) {
       logSync('fullSync', 'error', err.message);
       throw err;
