@@ -72,6 +72,25 @@ export function runMigrations() {
       key TEXT PRIMARY KEY,
       value TEXT
     );
+
+    CREATE TABLE IF NOT EXISTS competitions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      slug TEXT NOT NULL UNIQUE,
+      sport TEXT NOT NULL,
+      season TEXT,
+      active INTEGER DEFAULT 1,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS competition_provider_mappings (
+      competition_id INTEGER NOT NULL REFERENCES competitions(id) ON DELETE CASCADE,
+      data_type TEXT NOT NULL,
+      provider_name TEXT NOT NULL,
+      external_id TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      PRIMARY KEY (competition_id, data_type)
+    );
   `);
 
   // Add tv_channel column if not exists
@@ -175,5 +194,23 @@ export function runMigrations() {
   const update = db.prepare('UPDATE sweepstakes SET public_id = ? WHERE id = ?');
   for (const row of missing) {
     update.run(randomBytes(6).toString('hex'), row.id);
+  }
+
+  // Seed initial 2026 World Cup competition if not exists
+  const wcExists = db.prepare("SELECT id FROM competitions WHERE slug = 'world-cup-2026'").get();
+  if (!wcExists) {
+    const insertComp = db.prepare(`
+      INSERT INTO competitions (name, slug, sport, season, active)
+      VALUES ('FIFA World Cup 2026', 'world-cup-2026', 'football', '2026', 1)
+    `);
+    const result = insertComp.run();
+    const competitionId = result.lastInsertRowid;
+
+    // Seed its mapping for openfootball provider (fixtures)
+    const insertMapping = db.prepare(`
+      INSERT INTO competition_provider_mappings (competition_id, data_type, provider_name, external_id)
+      VALUES (?, 'fixtures', 'openfootball', '2026')
+    `);
+    insertMapping.run(competitionId);
   }
 }
