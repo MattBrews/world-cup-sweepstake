@@ -77,3 +77,28 @@ export function recalculateStandings() {
 
   return count;
 }
+
+export function getBestThirdPlaces() {
+  const db = getDb();
+
+  const thirdPlaced = db.prepare(
+    `SELECT cs.*, t.name as team_name, t.code, t.logo_url
+     FROM cached_standings cs
+     JOIN cached_teams t ON t.id = cs.team_id
+     WHERE cs.rank = 3
+     ORDER BY cs.group_letter`
+  ).all();
+
+  const sorted = [...thirdPlaced].sort((a, b) => {
+    if (b.points !== a.points) return b.points - a.points;
+    if (b.goal_diff !== a.goal_diff) return b.goal_diff - a.goal_diff;
+    if (b.goals_for !== a.goals_for) return b.goals_for - a.goals_for;
+    return a.group_letter.localeCompare(b.group_letter);
+  });
+
+  return sorted.map((t, i) => ({
+    ...t,
+    thirdPlaceRank: i + 1,
+    advances: i < 8,
+  }));
+}

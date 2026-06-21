@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { getDb } from '../db/connection.js';
+import { getBestThirdPlaces } from '../services/standingsCalculator.js';
 
 const router = Router();
 
@@ -87,6 +88,27 @@ router.get('/:ref/standings', (req, res) => {
     'SELECT * FROM cached_standings ORDER BY group_letter, rank'
   ).all();
   res.json(standings);
+});
+
+router.get('/:ref/advancement', (req, res) => {
+  const db = getDb();
+  const sweep = lookupSweep(req.params.ref);
+  if (!sweep) return res.status(404).json({ error: 'Not found' });
+
+  const standings = db.prepare(
+    'SELECT * FROM cached_standings ORDER BY group_letter, rank'
+  ).all();
+
+  const autoQualifiers = standings.filter(s => s.rank <= 2);
+  const thirdPlaces = getBestThirdPlaces();
+  const qualified = [...autoQualifiers, ...thirdPlaces.filter(t => t.advances)];
+
+  res.json({
+    autoQualifiers,
+    thirdPlaces,
+    totalQualified: qualified.length,
+    totalSpots: 32,
+  });
 });
 
 router.get('/:ref/recent-results', (req, res) => {

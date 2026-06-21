@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
-import { getDashboard, getRecentResults } from '../api/client';
+import { getDashboard, getRecentResults, getAdvancement } from '../api/client';
 import ProgressBar from '../components/ui/ProgressBar';
 import StageNav from '../components/ui/StageNav';
 import GroupCard from '../components/dashboard/GroupCard';
 import MatchCard from '../components/dashboard/MatchCard';
 import BracketView from '../components/dashboard/BracketView';
+import ThirdPlaceStandings from '../components/dashboard/ThirdPlaceStandings';
 import MatchDetailModal from '../components/dashboard/MatchDetailModal';
 
 export default function DashboardPage() {
@@ -17,6 +18,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [activeStage, setActiveStage] = useState(searchParams.get('stage') || null);
   const [recentResults, setRecentResults] = useState([]);
+  const [advancement, setAdvancement] = useState(null);
   const [selectedMatchId, setSelectedMatchId] = useState(null);
 
   useEffect(() => {
@@ -33,6 +35,7 @@ export default function DashboardPage() {
         }
       }).catch(() => {}),
       getRecentResults(publicId).then(setRecentResults).catch(() => {}),
+      getAdvancement(publicId).then(setAdvancement).catch(() => {}),
     ]);
 
     fetchData(true).finally(() => setLoading(false));
@@ -243,22 +246,33 @@ export default function DashboardPage() {
           onClick={setSelectedMatchId}
         />
       ) : (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-          gap: 16,
-        }}>
-          {groupLetters.map((letter, i) => (
-            <GroupCard
-              key={letter}
-              groupLetter={letter}
-              standings={groupedStandings[letter]}
-              participants={data.participants}
-              teamMap={teamMap}
-              tokenIndex={i}
-            />
-          ))}
-        </div>
+        <>
+          {advancement?.thirdPlaces && advancement.thirdPlaces.length > 0 && (
+            <div style={{ marginBottom: 20 }}>
+              <ThirdPlaceStandings
+                thirdPlaces={advancement.thirdPlaces}
+                participants={data.participants}
+                teamMap={teamMap}
+              />
+            </div>
+          )}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+            gap: 16,
+          }}>
+            {groupLetters.map((letter, i) => (
+              <GroupCard
+                key={letter}
+                groupLetter={letter}
+                standings={groupedStandings[letter]}
+                participants={data.participants}
+                teamMap={teamMap}
+                tokenIndex={i}
+              />
+            ))}
+          </div>
+        </>
       )}
       <MatchDetailModal
         publicId={publicId}
