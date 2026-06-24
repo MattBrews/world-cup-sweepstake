@@ -145,20 +145,6 @@ export default function DashboardPage() {
         </h1>
       </div>
 
-      <div style={{ textAlign: 'center', marginBottom: 20 }}>
-        <Link
-          to={`/sweepstake/${publicId}/monthly-report`}
-          style={{
-            display: 'inline-flex', alignItems: 'center', gap: 6,
-            padding: '10px 24px', borderRadius: 24,
-            background: 'var(--gradient-accent)', color: '#fff',
-            fontSize: 13, fontWeight: 700, textDecoration: 'none',
-          }}
-        >
-          View Monthly Report
-        </Link>
-      </div>
-
       <div style={{ marginBottom: 20 }}>
         <h3 style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-text-muted)', marginBottom: 8 }}>
           Up Next

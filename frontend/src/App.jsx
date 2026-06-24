@@ -17,7 +17,7 @@ export default function App() {
       <Route path="/sweepstake/:publicId/fixtures" element={<FixturesPage />} />
       <Route path="/sweepstake/:publicId/stats" element={<StatsPage />} />
       <Route path="/sweepstake/:publicId/participants" element={<ParticipantsPage />} />
-      <Route path="/sweepstake/:publicId/monthly-report" element={<MonthlyReportPage />} />
+      <Route path="/sweepstake/:publicId/report" element={<MonthlyReportPage />} />
       <Route path="/admin" element={<AdminLoginPage />} />
       <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
       <Route path="/admin/:slug" element={<AdminManagePage />} />

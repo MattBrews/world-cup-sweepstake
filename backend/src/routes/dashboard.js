@@ -271,7 +271,7 @@ router.get('/:ref/stats', (req, res) => {
   res.json(standings);
 });
 
-router.get('/:ref/monthly-report', (req, res) => {
+router.get('/:ref/report', (req, res) => {
   const report = generateMonthlyReport(req.params.ref);
   if (!report) return res.status(404).json({ error: 'Not found' });
   res.json(report);

@@ -127,7 +127,7 @@ export default function MonthlyReportPage() {
           backgroundClip: 'text',
           marginBottom: 4,
         }}>
-          Monthly Report
+          Report
         </h1>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
           <span style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>
@@ -163,47 +163,9 @@ export default function MonthlyReportPage() {
       {/* Stats row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12, marginBottom: 16 }}>
         <StatCard label="Participants" value={report.stats.totalParticipants} />
-        <StatCard label="Still Alive" value={report.stats.stillAlive} color="#68d391" />
+        <StatCard label="In Contention" value={report.stats.stillAlive} color="#f6ad55" />
         <StatCard label="Eliminated" value={report.stats.eliminated} color="#fc8181" />
-        <StatCard label="Total Groups" value={report.groupSnapshot.length} />
       </div>
-
-      {/* Leaderboard */}
-      <Section title="Leaderboard" accent>
-        {report.participantStandings.length === 0 ? (
-          <EmptyState message="No participants assigned yet." />
-        ) : (
-          <div>
-            {report.participantStandings.map((person, i) => (
-              <div key={person.name} style={{
-                display: 'flex', alignItems: 'center', gap: 12,
-                padding: '10px 0',
-                borderBottom: i < report.participantStandings.length - 1 ? '1px solid rgba(255,255,255,0.04)' : undefined,
-              }}>
-                <span style={{
-                  width: 24, fontWeight: 700, fontSize: 14,
-                  color: getRankColor(person.rank),
-                  textAlign: 'center',
-                }}>
-                  {person.rank}
-                </span>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: 14 }}>{person.name}</div>
-                  <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 1 }}>
-                    {person.teams.map(t => t.team_name).join(', ')}
-                  </div>
-                </div>
-                <span style={{
-                  fontSize: 20, fontWeight: 800, color: 'var(--color-accent)',
-                }}>
-                  {person.totalPoints}
-                </span>
-                <span style={{ fontSize: 11, color: 'var(--color-text-muted)', marginLeft: -4 }}>pts</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </Section>
 
       {/* Tournament Status */}
       {(report.teamStatusByPerson.qualified.length > 0 ||

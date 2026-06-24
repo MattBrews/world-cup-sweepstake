@@ -119,5 +119,5 @@ export function getAdvancement(slug) {
 }
 
 export function getMonthlyReport(slug) {
-  return request(`/sweepstakes/${slug}/monthly-report`);
+  return request(`/sweepstakes/${slug}/report`);
 }
