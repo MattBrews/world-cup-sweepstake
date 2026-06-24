@@ -161,7 +161,7 @@ export default function MonthlyReportPage() {
       )}
 
       {/* Stats row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12, marginBottom: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }}>
         <StatCard label="Participants" value={report.stats.totalParticipants} />
         <StatCard label="In Contention" value={report.stats.stillAlive} color="#f6ad55" />
         <StatCard label="Eliminated" value={report.stats.eliminated} color="#fc8181" />
@@ -391,7 +391,7 @@ export default function MonthlyReportPage() {
 function StatCard({ label, value, color }) {
   return (
     <div className="glass" style={{ padding: '16px 20px', textAlign: 'center' }}>
-      <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-text-muted)', marginBottom: 4 }}>
+      <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-text-muted)', marginBottom: 4, whiteSpace: 'nowrap' }}>
         {label}
       </div>
       <div style={{ fontSize: 28, fontWeight: 800, color: color || 'var(--color-accent)' }}>
