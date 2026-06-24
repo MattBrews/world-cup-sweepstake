@@ -117,3 +117,7 @@ export function getStats(slug, type) {
 export function getAdvancement(slug) {
   return request(`/sweepstakes/${slug}/advancement`);
 }
+
+export function getMonthlyReport(slug) {
+  return request(`/sweepstakes/${slug}/monthly-report`);
+}

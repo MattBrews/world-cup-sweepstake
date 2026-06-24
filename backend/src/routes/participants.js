@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { getDb } from '../db/connection.js';
 import { requireAdmin } from '../middleware/auth.js';
-import { isTeamEliminated } from '../services/seedMockData.js';
+import { determineQualificationStatus } from '../services/qualificationEngine.js';
 
 const router = Router();
 
@@ -18,6 +18,27 @@ function canManageSlug(req, slug) {
   return false;
 }
 
+function getTeamQualificationStatus(teamId, engineResults, fixtures) {
+  const engineStatus = engineResults[teamId];
+  if (engineStatus) return engineStatus;
+
+  // Knockout teams
+  const ko = fixtures.filter(f =>
+    f.stage && f.stage !== 'Group Stage' && (f.home_team_id === teamId || f.away_team_id === teamId)
+  );
+  if (ko.length > 0) {
+    const ftKo = ko.filter(f => f.status === 'FT');
+    if (ftKo.length > 0) {
+      const last = ftKo.sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+      const h = last.home_team_id === teamId;
+      return (h ? last.home_score : last.away_score) < (h ? last.away_score : last.home_score)
+        ? 'ELIMINATED' : 'QUALIFIED';
+    }
+    return 'QUALIFIED';
+  }
+  return 'QUALIFIED';
+}
+
 router.get('/:ref/participants', (req, res) => {
   const db = getDb();
   const sweep = lookupSweep(req.params.ref);
@@ -25,6 +46,15 @@ router.get('/:ref/participants', (req, res) => {
 
   const fixtures = db.prepare('SELECT * FROM cached_fixtures').all();
   const standings = db.prepare('SELECT * FROM cached_standings').all();
+  const teams = db.prepare('SELECT * FROM cached_teams ORDER BY name').all();
+
+  const engineTeams = teams.filter(t => t.group_letter).map(t => ({
+    id: t.id,
+    group_letter: t.group_letter,
+    disciplinary_points: 0,
+    fifa_ranking: t.fifa_ranking || 9999,
+  }));
+  const engineResults = determineQualificationStatus(engineTeams, fixtures);
 
   const list = db.prepare(
     `SELECT p.id, p.name, p.team_id, p.team_name, t.group_letter
@@ -36,7 +66,7 @@ router.get('/:ref/participants', (req, res) => {
 
   const result = list.map(p => ({
     ...p,
-    eliminated: isTeamEliminated(p.team_id, fixtures, standings),
+    status: getTeamQualificationStatus(p.team_id, engineResults, fixtures),
   }));
 
   res.json(result);

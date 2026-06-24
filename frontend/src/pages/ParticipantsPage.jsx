@@ -31,7 +31,7 @@ export default function ParticipantsPage() {
     grouped[p.name].push(p);
   }
 
-  const isEliminatedPerson = (teams) => teams.every(t => t.eliminated);
+  const isEliminatedPerson = (teams) => teams.every(t => t.status === 'ELIMINATED');
 
   const sortedEntries = Object.entries(grouped).sort(([_a, teamsA], [_b, teamsB]) => {
     const aOut = isEliminatedPerson(teamsA);
@@ -90,8 +90,8 @@ export default function ParticipantsPage() {
           {sortedEntries.map(([name, teams]) => {
             const allOut = isEliminatedPerson(teams);
             const sortedTeams = [...teams].sort((a, b) => {
-              if (a.eliminated && !b.eliminated) return 1;
-              if (!a.eliminated && b.eliminated) return -1;
+              if (a.status === 'ELIMINATED' && b.status !== 'ELIMINATED') return 1;
+              if (a.status !== 'ELIMINATED' && b.status === 'ELIMINATED') return -1;
               return 0;
             });
             return (
@@ -133,7 +133,7 @@ export default function ParticipantsPage() {
               </div>
               {sortedTeams.map(t => {
                 const team = teamMap[t.team_id];
-                const isOut = t.eliminated;
+                const isOut = t.status === 'ELIMINATED';
                 return (
                   <div
                     key={t.id}

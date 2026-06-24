@@ -110,6 +110,9 @@ export function runMigrations() {
   try { db.exec("ALTER TABLE cached_fixtures ADD COLUMN home_placeholder TEXT"); } catch {}
   try { db.exec("ALTER TABLE cached_fixtures ADD COLUMN away_placeholder TEXT"); } catch {}
 
+  // FIFA ranking for tiebreakers
+  try { db.exec("ALTER TABLE cached_teams ADD COLUMN fifa_ranking INTEGER DEFAULT 9999"); } catch {}
+
   // Match events (timeline)
   db.exec(`
     CREATE TABLE IF NOT EXISTS match_events (

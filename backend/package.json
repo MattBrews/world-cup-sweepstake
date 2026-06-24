@@ -4,8 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-"dev": "DOTENV_CONFIG_PATH=../.env node --watch src/index.js",
-"start": "DOTENV_CONFIG_PATH=../.env node src/index.js"
+    "dev": "DOTENV_CONFIG_PATH=../.env node --watch src/index.js",
+    "start": "DOTENV_CONFIG_PATH=../.env node src/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
@@ -17,5 +19,8 @@
     "node-cron": "^3.0.3",
     "node-fetch": "^3.3.2",
     "uuid": "^10.0.0"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.9"
   }
 }

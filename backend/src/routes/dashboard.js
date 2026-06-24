@@ -1,6 +1,9 @@
 import { Router } from 'express';
 import { getDb } from '../db/connection.js';
 import { getBestThirdPlaces } from '../services/standingsCalculator.js';
+import { getRecords } from '../services/recordCalculator.js';
+import { generateMonthlyReport } from '../services/monthlyReport.js';
+import { determineQualificationStatus } from '../services/qualificationEngine.js';
 
 const router = Router();
 
@@ -36,6 +39,39 @@ router.get('/:ref/dashboard', (req, res) => {
 
   const currentStage = detectCurrentStage(fixtures);
 
+  // Qualification status from the simulation engine
+  const engineTeams = teams.filter(t => t.group_letter).map(t => ({
+    id: t.id,
+    group_letter: t.group_letter,
+    disciplinary_points: 0,
+    fifa_ranking: t.fifa_ranking || 9999,
+  }));
+  const engineResults = determineQualificationStatus(engineTeams, fixtures);
+  const teamStatus = {};
+  for (const t of teams) {
+    if (engineResults[t.id]) {
+      teamStatus[t.id] = engineResults[t.id];
+    } else {
+      // Knockout teams: still in it unless they lost
+      const ko = fixtures.filter(f =>
+        f.stage && f.stage !== 'Group Stage' && (f.home_team_id === t.id || f.away_team_id === t.id)
+      );
+      if (ko.length > 0) {
+        const ftKo = ko.filter(f => f.status === 'FT');
+        if (ftKo.length > 0) {
+          const last = ftKo.sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+          const h = last.home_team_id === t.id;
+          teamStatus[t.id] = (h ? last.home_score : last.away_score) < (h ? last.away_score : last.home_score)
+            ? 'ELIMINATED' : 'QUALIFIED';
+        } else {
+          teamStatus[t.id] = 'QUALIFIED';
+        }
+      } else {
+        teamStatus[t.id] = 'QUALIFIED';
+      }
+    }
+  }
+
   res.json({
     sweepstake: sweep,
     participants,
@@ -44,6 +80,7 @@ router.get('/:ref/dashboard', (req, res) => {
     fixtures,
     teams,
     currentStage,
+    teamStatus,
   });
 });
 
@@ -224,205 +261,7 @@ router.get('/:ref/stats', (req, res) => {
   }
 
   if (type === 'records') {
-    const minuteExpr = `CAST(me.minute AS INTEGER) + CASE WHEN INSTR(me.minute, '+') > 0 THEN CAST(SUBSTR(me.minute, INSTR(me.minute, '+') + 1) AS INTEGER) ELSE 0 END`;
-
-    // Earliest and latest goals
-    const earliestGoal = db.prepare(`
-      SELECT t.id as team_id, t.name, t.logo_url, MIN(${minuteExpr}) as minute
-      FROM match_events me
-      JOIN cached_fixtures f ON me.match_id = f.id
-      JOIN cached_teams t ON me.team_id = t.id
-      WHERE me.type = 'GOAL'
-      GROUP BY me.id
-      ORDER BY minute ASC
-      LIMIT 1
-    `).get();
-
-    const latestGoal = db.prepare(`
-      SELECT t.id as team_id, t.name, t.logo_url, MAX(${minuteExpr}) as minute
-      FROM match_events me
-      JOIN cached_fixtures f ON me.match_id = f.id
-      JOIN cached_teams t ON me.team_id = t.id
-      WHERE me.type = 'GOAL'
-      GROUP BY me.id
-      ORDER BY minute DESC
-      LIMIT 1
-    `).get();
-
-    // Earliest and latest yellow cards
-    const earliestYellow = db.prepare(`
-      SELECT t.id as team_id, t.name, t.logo_url, MIN(${minuteExpr}) as minute
-      FROM match_events me
-      JOIN cached_fixtures f ON me.match_id = f.id
-      JOIN cached_teams t ON me.team_id = t.id
-      WHERE me.type = 'BOOKING' AND json_extract(me.additional_info, '$.card') = 'YELLOW'
-      GROUP BY me.id
-      ORDER BY minute ASC
-      LIMIT 1
-    `).get();
-
-    const latestYellow = db.prepare(`
-      SELECT t.id as team_id, t.name, t.logo_url, MAX(${minuteExpr}) as minute
-      FROM match_events me
-      JOIN cached_fixtures f ON me.match_id = f.id
-      JOIN cached_teams t ON me.team_id = t.id
-      WHERE me.type = 'BOOKING' AND json_extract(me.additional_info, '$.card') = 'YELLOW'
-      GROUP BY me.id
-      ORDER BY minute DESC
-      LIMIT 1
-    `).get();
-
-    // Earliest and latest red cards
-    const earliestRed = db.prepare(`
-      SELECT t.id as team_id, t.name, t.logo_url, MIN(${minuteExpr}) as minute
-      FROM match_events me
-      JOIN cached_fixtures f ON me.match_id = f.id
-      JOIN cached_teams t ON me.team_id = t.id
-      WHERE me.type = 'BOOKING' AND json_extract(me.additional_info, '$.card') IN ('RED', 'SECOND_YELLOW')
-      GROUP BY me.id
-      ORDER BY minute ASC
-      LIMIT 1
-    `).get();
-
-    const latestRed = db.prepare(`
-      SELECT t.id as team_id, t.name, t.logo_url, MAX(${minuteExpr}) as minute
-      FROM match_events me
-      JOIN cached_fixtures f ON me.match_id = f.id
-      JOIN cached_teams t ON me.team_id = t.id
-      WHERE me.type = 'BOOKING' AND json_extract(me.additional_info, '$.card') IN ('RED', 'SECOND_YELLOW')
-      GROUP BY me.id
-      ORDER BY minute DESC
-      LIMIT 1
-    `).get();
-
-    // Most goals in first half (minute <= 45)
-    const mostGoalsFirstHalf = db.prepare(`
-      SELECT t.id as team_id, t.name, t.logo_url, COUNT(*) as goals
-      FROM match_events me
-      JOIN cached_teams t ON me.team_id = t.id
-      WHERE me.type = 'GOAL' AND ${minuteExpr} <= 45
-      GROUP BY me.team_id
-      ORDER BY goals DESC, t.name ASC
-      LIMIT 1
-    `).get();
-
-    // Most goals in second half (minute > 45)
-    const mostGoalsSecondHalf = db.prepare(`
-      SELECT t.id as team_id, t.name, t.logo_url, COUNT(*) as goals
-      FROM match_events me
-      JOIN cached_teams t ON me.team_id = t.id
-      WHERE me.type = 'GOAL' AND ${minuteExpr} > 45
-      GROUP BY me.team_id
-      ORDER BY goals DESC, t.name ASC
-      LIMIT 1
-    `).get();
-
-    // Most goals by a team in a single match
-    const mostGoalsSingleGame = db.prepare(`
-      SELECT t.id as team_id, t.name, t.logo_url, MAX(goals) as goals
-      FROM (
-        SELECT f.home_team_id as team_id, f.home_score as goals FROM cached_fixtures f WHERE f.status = 'FT' AND f.home_score IS NOT NULL
-        UNION ALL
-        SELECT f.away_team_id as team_id, f.away_score as goals FROM cached_fixtures f WHERE f.status = 'FT' AND f.away_score IS NOT NULL
-      ) team_scores
-      JOIN cached_teams t ON t.id = team_scores.team_id
-      GROUP BY t.id
-      ORDER BY goals DESC, t.name ASC
-      LIMIT 1
-    `).get();
-
-    // Most goals by a player in a single match (excluding own goals)
-    const mostPlayerGoalsSingleGame = db.prepare(`
-      SELECT me.player_name, me.team_id, t.name as team_name, t.logo_url, COUNT(*) as goals
-      FROM match_events me
-      JOIN cached_teams t ON me.team_id = t.id
-      WHERE me.type = 'GOAL' AND me.player_name IS NOT NULL
-        AND (json_extract(me.additional_info, '$.goalType') IS NULL OR json_extract(me.additional_info, '$.goalType') != 3)
-      GROUP BY me.match_id, me.player_name
-      ORDER BY goals DESC, me.player_name ASC
-      LIMIT 1
-    `).get();
-
-    // Most goals by a player in the first half (across all matches, excluding own goals)
-    const mostPlayerGoalsFirstHalf = db.prepare(`
-      SELECT me.player_name, me.team_id, t.name as team_name, t.logo_url, COUNT(*) as goals
-      FROM match_events me
-      JOIN cached_teams t ON me.team_id = t.id
-      WHERE me.type = 'GOAL' AND me.player_name IS NOT NULL AND ${minuteExpr} <= 45
-        AND (json_extract(me.additional_info, '$.goalType') IS NULL OR json_extract(me.additional_info, '$.goalType') != 3)
-      GROUP BY me.player_name, me.team_id
-      ORDER BY goals DESC, me.player_name ASC
-      LIMIT 1
-    `).get();
-
-    // Most goals by a player in the second half (across all matches, excluding own goals)
-    const mostPlayerGoalsSecondHalf = db.prepare(`
-      SELECT me.player_name, me.team_id, t.name as team_name, t.logo_url, COUNT(*) as goals
-      FROM match_events me
-      JOIN cached_teams t ON me.team_id = t.id
-      WHERE me.type = 'GOAL' AND me.player_name IS NOT NULL AND ${minuteExpr} > 45
-        AND (json_extract(me.additional_info, '$.goalType') IS NULL OR json_extract(me.additional_info, '$.goalType') != 3)
-      GROUP BY me.player_name, me.team_id
-      ORDER BY goals DESC, me.player_name ASC
-      LIMIT 1
-    `).get();
-
-    // Most clean sheets
-    const mostCleanSheets = db.prepare(`
-      SELECT t.id as team_id, t.name, t.logo_url, COUNT(*) as goals
-      FROM cached_fixtures f
-      JOIN cached_teams t ON (f.home_team_id = t.id OR f.away_team_id = t.id)
-      WHERE f.status = 'FT'
-        AND ((f.home_team_id = t.id AND f.away_score = 0) OR (f.away_team_id = t.id AND f.home_score = 0))
-      GROUP BY t.id
-      ORDER BY goals DESC, t.name ASC
-      LIMIT 1
-    `).get();
-
-    // Most own goals by a player (team = player's actual team, not beneficiary)
-    const mostOwnGoalsPlayer = db.prepare(`
-      SELECT me.player_name,
-             CASE WHEN me.team_id = f.home_team_id THEN f.away_team_id ELSE f.home_team_id END as team_id,
-             t.name as team_name, t.logo_url,
-             COUNT(*) as own_goals
-      FROM match_events me
-      JOIN cached_fixtures f ON me.match_id = f.id
-      JOIN cached_teams t ON t.id = CASE WHEN me.team_id = f.home_team_id THEN f.away_team_id ELSE f.home_team_id END
-      WHERE me.type = 'GOAL' AND me.player_name IS NOT NULL AND json_extract(me.additional_info, '$.goalType') = 3
-      GROUP BY me.player_name, team_id
-      ORDER BY own_goals DESC, me.player_name ASC
-      LIMIT 1
-    `).get();
-
-    // Most own goals by a team (team = player's actual team, not beneficiary)
-    const mostOwnGoalsTeam = db.prepare(`
-      SELECT t.id as team_id, t.name, t.logo_url, COUNT(*) as own_goals
-      FROM match_events me
-      JOIN cached_fixtures f ON me.match_id = f.id
-      JOIN cached_teams t ON t.id = CASE WHEN me.team_id = f.home_team_id THEN f.away_team_id ELSE f.home_team_id END
-      WHERE me.type = 'GOAL' AND json_extract(me.additional_info, '$.goalType') = 3
-      GROUP BY t.id
-      ORDER BY own_goals DESC, t.name ASC
-      LIMIT 1
-    `).get();
-
-    return res.json({
-      earliestGoal,
-      latestGoal,
-      earliestYellow,
-      latestYellow,
-      earliestRed,
-      latestRed,
-      mostGoalsFirstHalf,
-      mostGoalsSecondHalf,
-      mostGoalsSingleGame,
-      mostPlayerGoalsSingleGame,
-      mostPlayerGoalsFirstHalf,
-      mostPlayerGoalsSecondHalf,
-      mostCleanSheets,
-      mostOwnGoalsPlayer,
-      mostOwnGoalsTeam,
-    });
+    return res.json(getRecords());
   }
 
   // Default: standings
@@ -430,6 +269,12 @@ router.get('/:ref/stats', (req, res) => {
     'SELECT * FROM cached_standings ORDER BY group_letter, rank'
   ).all();
   res.json(standings);
+});
+
+router.get('/:ref/monthly-report', (req, res) => {
+  const report = generateMonthlyReport(req.params.ref);
+  if (!report) return res.status(404).json({ error: 'Not found' });
+  res.json(report);
 });
 
 export default router;
