@@ -19,10 +19,7 @@ function canManageSlug(req, slug) {
 }
 
 function getTeamQualificationStatus(teamId, engineResults, fixtures) {
-  const engineStatus = engineResults[teamId];
-  if (engineStatus) return engineStatus;
-
-  // Knockout teams
+  // Knockout check takes priority
   const ko = fixtures.filter(f =>
     f.stage && f.stage !== 'Group Stage' && (f.home_team_id === teamId || f.away_team_id === teamId)
   );
@@ -34,9 +31,10 @@ function getTeamQualificationStatus(teamId, engineResults, fixtures) {
       return (h ? last.home_score : last.away_score) < (h ? last.away_score : last.home_score)
         ? 'ELIMINATED' : 'QUALIFIED';
     }
-    return 'QUALIFIED';
+    // Fall through to engine if no FT knockout yet
   }
-  return 'QUALIFIED';
+
+  return engineResults[teamId] || 'QUALIFIED';
 }
 
 router.get('/:ref/participants', (req, res) => {

@@ -23,8 +23,9 @@ function getTeamStatus(teamId, engineResults, fixtures, standings) {
       const last = ftKo.sort((a, b) => new Date(b.date) - new Date(a.date))[0];
       const h = last.home_team_id === teamId;
       if ((h ? last.home_score : last.away_score) < (h ? last.away_score : last.home_score)) return 'eliminated';
+      return 'qualified';
     }
-    return 'qualified';
+    // No completed knockout fixtures — fall through to engine
   }
   const status = engineResults[teamId];
   if (status === 'QUALIFIED') return 'qualified';
