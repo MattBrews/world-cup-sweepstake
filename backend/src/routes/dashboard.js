@@ -49,27 +49,29 @@ router.get('/:ref/dashboard', (req, res) => {
   const engineResults = determineQualificationStatus(engineTeams, fixtures);
   const teamStatus = {};
   for (const t of teams) {
-    if (engineResults[t.id]) {
-      teamStatus[t.id] = engineResults[t.id];
-    } else {
-      // Knockout teams: still in it unless they lost
-      const ko = fixtures.filter(f =>
-        f.stage && f.stage !== 'Group Stage' && (f.home_team_id === t.id || f.away_team_id === t.id)
-      );
-      if (ko.length > 0) {
-        const ftKo = ko.filter(f => f.status === 'FT');
-        if (ftKo.length > 0) {
-          const last = ftKo.sort((a, b) => new Date(b.date) - new Date(a.date))[0];
-          const h = last.home_team_id === t.id;
-          teamStatus[t.id] = (h ? last.home_score : last.away_score) < (h ? last.away_score : last.home_score)
-            ? 'ELIMINATED' : 'QUALIFIED';
+    // Knockout check takes priority — a knockout loss eliminates regardless of group status
+    const ko = fixtures.filter(f =>
+      f.stage && f.stage !== 'Group Stage' && (f.home_team_id === t.id || f.away_team_id === t.id)
+    );
+    if (ko.length > 0) {
+      const ftKo = ko.filter(f => f.status === 'FT');
+      if (ftKo.length > 0) {
+        const last = ftKo.sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+        const h = last.home_team_id === t.id;
+        const homeScore = last.home_score ?? 0;
+        const awayScore = last.away_score ?? 0;
+        if (homeScore === awayScore) {
+          teamStatus[t.id] = 'PENDING';
         } else {
-          teamStatus[t.id] = 'QUALIFIED';
+          teamStatus[t.id] = (h ? homeScore : awayScore) < (h ? awayScore : homeScore)
+            ? 'ELIMINATED' : 'QUALIFIED';
         }
-      } else {
-        teamStatus[t.id] = 'QUALIFIED';
+        continue;
       }
+      // Team has knockout fixtures but none completed yet — fall through to engine
     }
+
+    teamStatus[t.id] = engineResults[t.id] || 'PENDING';
   }
 
   res.json({
