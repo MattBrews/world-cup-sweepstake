@@ -86,14 +86,21 @@ router.get('/:ref/dashboard', (req, res) => {
 
 function detectCurrentStage(fixtures) {
   const stages = ['Group Stage', 'Round of 32', 'Round of 16', 'Quarter-finals', 'Semi-finals', '3rd Place', 'Final'];
+  const now = new Date();
 
-  const lastUnplayed = fixtures
+  const unplayed = fixtures
     .filter(f => f.status !== 'FT' && f.status !== 'AWAITING')
-    .sort((a, b) => new Date(a.date) - new Date(b.date))[0];
+    .sort((a, b) => {
+      if (a.status === 'IN_PROGRESS' && b.status !== 'IN_PROGRESS') return -1;
+      if (a.status !== 'IN_PROGRESS' && b.status === 'IN_PROGRESS') return 1;
+      return new Date(a.date) - new Date(b.date);
+    });
 
-  if (!lastUnplayed) return stages[stages.length - 1];
+  const current = unplayed.find(f => f.status === 'IN_PROGRESS' || new Date(f.date) > now) || unplayed[0];
 
-  return lastUnplayed.stage || 'Group Stage';
+  if (!current) return stages[stages.length - 1];
+
+  return current.stage || 'Group Stage';
 }
 
 router.get('/:ref/fixtures', (req, res) => {

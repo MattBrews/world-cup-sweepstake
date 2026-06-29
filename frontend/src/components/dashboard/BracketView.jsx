@@ -310,13 +310,14 @@ export default function BracketView({ fixtures, allFixtures = [], teams, partici
     const targetIdx = (() => {
       if (currentStage === 'Final' || currentStage === '3rd Place') return 4;
       const idx = SLIDES.findIndex(s => s.current === currentStage || s.next === currentStage);
-      return idx >= 0 ? idx : activeSlide;
+      return idx >= 0 ? idx : 0;
     })();
     if (targetIdx !== activeSlide) {
       setAnimate(false);
       setActiveSlide(targetIdx);
     }
-  }, [currentStage, activeSlide]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStage]);
 
   useEffect(() => {
     if (!animate) {

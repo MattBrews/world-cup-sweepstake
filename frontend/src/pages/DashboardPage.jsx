@@ -9,6 +9,8 @@ import BracketView from '../components/dashboard/BracketView';
 import ThirdPlaceStandings from '../components/dashboard/ThirdPlaceStandings';
 import MatchDetailModal from '../components/dashboard/MatchDetailModal';
 
+const KNOCKOUT_STAGES = ['Round of 32', 'Round of 16', 'Quarter-finals', 'Semi-finals', '3rd Place', 'Final'];
+
 export default function DashboardPage() {
   const { publicId } = useParams();
   const navigate = useNavigate();
@@ -16,33 +18,25 @@ export default function DashboardPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeStage, setActiveStage] = useState(searchParams.get('stage') || null);
+  const [activeStage, setActiveStage] = useState(() => {
+    const fromUrl = searchParams.get('stage');
+    if (fromUrl) return fromUrl === 'Knockout' || KNOCKOUT_STAGES.includes(fromUrl) ? 'Knockout' : fromUrl;
+    return null;
+  });
   const [recentResults, setRecentResults] = useState([]);
   const [advancement, setAdvancement] = useState(null);
   const [selectedMatchId, setSelectedMatchId] = useState(null);
 
   useEffect(() => {
-    const fetchData = (isInitial = false) => Promise.all([
-      getDashboard(publicId).then(d => {
-        setData(d);
-        if (isInitial) {
-          const stageFromUrl = searchParams.get('stage');
-          if (stageFromUrl) {
-            setActiveStage(knockoutStages.includes(stageFromUrl) ? 'Knockout' : stageFromUrl);
-          } else if (d.currentStage) {
-            setActiveStage(knockoutStages.includes(d.currentStage) ? 'Knockout' : d.currentStage);
-          }
-        }
-      }).catch(() => {}),
+    const fetchData = () => Promise.all([
+      getDashboard(publicId).then(setData).catch(() => {}),
       getRecentResults(publicId).then(setRecentResults).catch(() => {}),
       getAdvancement(publicId).then(setAdvancement).catch(() => {}),
     ]);
 
-    fetchData(true).finally(() => setLoading(false));
+    fetchData().finally(() => setLoading(false));
 
-    const interval = setInterval(() => {
-      fetchData(false);
-    }, 15000);
+    const interval = setInterval(fetchData, 15000);
 
     return () => clearInterval(interval);
   }, [publicId]);
@@ -65,19 +59,18 @@ export default function DashboardPage() {
     teamMap[t.id] = t;
   }
 
-  const knockoutStages = ['Round of 32', 'Round of 16', 'Quarter-finals', 'Semi-finals', '3rd Place', 'Final'];
-  const fallbackStage = knockoutStages.includes(data.currentStage) ? 'Knockout' : data.currentStage;
+  const fallbackStage = KNOCKOUT_STAGES.includes(data.currentStage) ? 'Knockout' : data.currentStage;
   const resolvedStage = activeStage || fallbackStage;
-  const isKnockout = resolvedStage === 'Knockout';
+  const isKnockout = resolvedStage === 'Knockout' || KNOCKOUT_STAGES.includes(resolvedStage);
 
   const fixtureStatus = {};
   for (const f of data.fixtures) fixtureStatus[f.id] = f.status;
   for (const f of recentResults) if (fixtureStatus[f.id] !== 'FT') fixtureStatus[f.id] = f.status;
 
   const stageFixtures = isKnockout
-    ? data.fixtures.filter(f => knockoutStages.includes(f.stage))
+    ? data.fixtures.filter(f => KNOCKOUT_STAGES.includes(f.stage))
     : data.fixtures.filter(f => f.stage === resolvedStage);
-  const knockoutFixtures = data.fixtures.filter(f => knockoutStages.includes(f.stage));
+  const knockoutFixtures = data.fixtures.filter(f => KNOCKOUT_STAGES.includes(f.stage));
   const stageTotal = stageFixtures.length;
   const stageCompleted = stageFixtures.filter(f => fixtureStatus[f.id] === 'FT').length;
   const liveFixtures = data.fixtures.filter(f => f.status === 'IN_PROGRESS' || f.lifecycle_state === 'IN_PROGRESS');
@@ -223,7 +216,7 @@ export default function DashboardPage() {
       <div style={{ marginBottom: 16 }}>
         <StageNav
           current={data.currentStage}
-          activeStage={activeStage}
+          activeStage={resolvedStage}
           onSelect={setStage}
         />
       </div>
