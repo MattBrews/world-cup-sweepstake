@@ -115,6 +115,11 @@ function MatchCardSmall({ fixture, homeTeam, awayTeam, teamToParticipant, isFini
         }}>
           <span style={{ whiteSpace: 'nowrap' }}>
             {isFinished || isLive ? (fixture.home_score ?? '-') : '-'}:{isFinished || isLive ? (fixture.away_score ?? '-') : '-'}
+            {isFinished && fixture.home_pen_score != null && (
+              <span style={{ fontSize: 11, color: 'var(--color-text-muted)', fontWeight: 600, marginLeft: 2 }}>
+                ({fixture.home_pen_score}:{fixture.away_pen_score})
+              </span>
+            )}
           </span>
         </div>
 

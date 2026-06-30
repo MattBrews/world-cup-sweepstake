@@ -61,7 +61,12 @@ router.get('/:ref/dashboard', (req, res) => {
         const homeScore = last.home_score ?? 0;
         const awayScore = last.away_score ?? 0;
         if (homeScore === awayScore) {
-          teamStatus[t.id] = 'PENDING';
+          if (last.home_pen_score != null && last.away_pen_score != null && last.home_pen_score !== last.away_pen_score) {
+            teamStatus[t.id] = (h ? last.home_pen_score : last.away_pen_score) < (h ? last.away_pen_score : last.home_pen_score)
+              ? 'ELIMINATED' : 'QUALIFIED';
+          } else {
+            teamStatus[t.id] = 'PENDING';
+          }
         } else {
           teamStatus[t.id] = (h ? homeScore : awayScore) < (h ? awayScore : homeScore)
             ? 'ELIMINATED' : 'QUALIFIED';

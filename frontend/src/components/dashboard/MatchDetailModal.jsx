@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getMatchDetails } from '../../api/client';
 
-const TABS = ['Timeline', 'Line-ups', 'Bookings'];
+const TABS = ['Timeline', 'Line-ups', 'Bookings', 'Penalties'];
 
 function shortRound(stage) {
   const m = {
@@ -132,7 +132,9 @@ export default function MatchDetailModal({ publicId, matchId, onClose }) {
                 <span style={{ color: 'var(--color-accent)' }}>🔴 LIVE{fixture.current_minute_display ? ` ${fixture.current_minute_display}'` : fixture.current_minute != null ? ` ${fixture.current_minute}'` : ''}</span>
               )}
               {fixture && fixture.status === 'FT' && (
-                <span style={{ color: 'var(--color-text-muted)', fontSize: 10 }}>FT</span>
+                <span style={{ color: 'var(--color-text-muted)', fontSize: 10 }}>
+                  FT{fixture.home_pen_score != null ? ' (AP)' : ''}
+                </span>
               )}
             </div>
             <button
@@ -161,6 +163,11 @@ export default function MatchDetailModal({ publicId, matchId, onClose }) {
                     {fixture.status === 'FT' || fixture.status === 'IN_PROGRESS' || fixture.lifecycle_state === 'IN_PROGRESS'
                       ? `${fixture.home_score ?? '-'} : ${fixture.away_score ?? '-'}`
                       : 'vs'}
+                    {fixture.status === 'FT' && fixture.home_pen_score != null && (
+                      <span style={{ fontSize: 16, color: 'var(--color-text-muted)', fontWeight: 600, marginLeft: 6 }}>
+                        ({fixture.home_pen_score} : {fixture.away_pen_score})
+                      </span>
+                    )}
                   </div>
                   {(fixture.status === 'FT' || fixture.status === 'IN_PROGRESS') && fixture.home_ht_score != null && fixture.away_ht_score != null && (
                     <div style={{ fontSize: 11, color: 'var(--color-text-muted)', fontWeight: 600 }}>
@@ -184,7 +191,7 @@ export default function MatchDetailModal({ publicId, matchId, onClose }) {
               </div>
 
               <div style={{ marginBottom: 8, display: 'flex', gap: 4 }}>
-                {TABS.map(t => (
+                {TABS.filter(t => t !== 'Penalties' || fixture.home_pen_score != null).map(t => (
                   <button
                     key={t}
                     onClick={() => setTab(t)}
@@ -219,6 +226,9 @@ export default function MatchDetailModal({ publicId, matchId, onClose }) {
           {!loading && data && tab === 'Bookings' && (
             <BookingsTab events={events} homeTeamId={fixture?.home_team_id} awayTeamId={fixture?.away_team_id} homeTeam={homeTeam} awayTeam={awayTeam} />
           )}
+          {!loading && data && tab === 'Penalties' && (
+            <PenaltiesTab events={events} fixture={fixture} homeTeamId={fixture?.home_team_id} awayTeamId={fixture?.away_team_id} homeTeam={homeTeam} awayTeam={awayTeam} />
+          )}
         </div>
       </div>
     </div>
@@ -242,40 +252,168 @@ function formatMinute(minute) {
   return `${minute}'`;
 }
 
+function TransitionRow({ label }) {
+  return (
+    <div style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '12px 0' }}>
+      <div style={{ flex: 1, height: 1, background: 'var(--color-text-muted)', opacity: 0.3 }} />
+      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', letterSpacing: 1, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{label}</div>
+      <div style={{ flex: 1, height: 1, background: 'var(--color-text-muted)', opacity: 0.3 }} />
+    </div>
+  );
+}
+
+function PeriodHeader({ label }) {
+  return (
+    <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-accent)', letterSpacing: 1, textTransform: 'uppercase', padding: '8px 0 4px', textAlign: 'center' }}>
+      ⬤ {label}
+    </div>
+  );
+}
+
+const CANONICAL_PERIODS = [3, 5, 7, 9];
+
+const PERIOD_LABEL = {
+  3: 'First Half',
+  4: 'Second Half',
+  5: 'Second Half',
+  7: 'Extra Time (1st Half)',
+  9: 'Extra Time (2nd Half)',
+};
+
+const REGULAR_PERIODS = [3, 4, 5];
+const ET_PERIODS = [7, 9];
+
+function periodType(p) {
+  if (ET_PERIODS.includes(p)) return 'et';
+  if (REGULAR_PERIODS.includes(p)) return 'regular';
+  return 'other';
+}
+
 function TimelineTab({ events, homeTeamId, awayTeamId, homeTeam, awayTeam, fixture }) {
-  if (events.length === 0) {
+  const matchEvents = events.filter(e => e.minute != null && parseMinute(e.minute) !== null);
+
+  if (matchEvents.length === 0) {
     return <div style={{ textAlign: 'center', padding: 40, color: 'var(--color-text-muted)' }}>No events recorded.</div>;
   }
 
-  const validEvents = events.filter(e => parseMinute(e.minute) !== null);
-  // Sort by period then minute for correct halftime ordering
-  validEvents.sort((a, b) => (a.period || 0) - (b.period || 0) || parseMinute(a.minute) - parseMinute(b.minute));
+  // Group valid events by period, sorted within
+  const byPeriod = {};
+  for (const e of matchEvents) {
+    const p = e.period || 3;
+    if (!byPeriod[p]) byPeriod[p] = [];
+    byPeriod[p].push(e);
+  }
+  for (const p of Object.keys(byPeriod)) {
+    byPeriod[p].sort((a, b) => parseMinute(a.minute) - parseMinute(b.minute));
+  }
 
-  const homeEvents = validEvents.filter(e => parseInt(e.team_id) === parseInt(homeTeamId));
-  const awayEvents = validEvents.filter(e => parseInt(e.team_id) === parseInt(awayTeamId));
-  const neutralEvents = validEvents.filter(e => !e.team_id || (parseInt(e.team_id) !== parseInt(homeTeamId) && parseInt(e.team_id) !== parseInt(awayTeamId)));
+  const presentPeriods = Object.keys(byPeriod).map(Number).sort((a, b) => a - b);
+  const presentSet = new Set(presentPeriods);
 
-  const allMinutes = [...new Set(validEvents.map(e => parseMinute(e.minute)))];
-  // Sort by period first, then minute — ensures 45+5 (first half, parsed 50)
-  // comes before 47' (second half, parsed 47) in the timeline
-  allMinutes.sort((a, b) => {
-    const periodA = validEvents.find(e => parseMinute(e.minute) === a)?.period || 0;
-    const periodB = validEvents.find(e => parseMinute(e.minute) === b)?.period || 0;
-    if (periodA !== periodB) return periodA - periodB;
-    return a - b;
-  });
+  const hasPenScores = fixture?.home_pen_score != null || fixture?.away_pen_score != null;
+  const isFT = fixture?.status === 'FT';
 
-  const halftimeReached = fixture?.status === 'FT' || fixture?.current_minute > 45 || validEvents.some(e => (e.period || 0) >= 2);
-  const hasSecondHalfEvents = validEvents.some(e => (e.period || 0) >= 2);
-  const lastMinute = allMinutes.length > 0 ? allMinutes[allMinutes.length - 1] : null;
-  const showHalftimeEnd = halftimeReached && !hasSecondHalfEvents && lastMinute != null && lastMinute <= 45;
+  // Determine which canonical periods are known to have finished:
+  // A period is finished if a later period has events, or the match is FT/AP
+  let lastKnownIdx = -1;
+  for (let i = CANONICAL_PERIODS.length - 1; i >= 0; i--) {
+    if (presentSet.has(CANONICAL_PERIODS[i])) {
+      lastKnownIdx = i;
+      break;
+    }
+  }
 
-  function HalftimeRow() {
+  // If FT, at least Second Half (index 1) is finished
+  if (isFT && lastKnownIdx < 1) lastKnownIdx = 1;
+  // If penalty scores exist, extra time is finished
+  if (hasPenScores && lastKnownIdx < 3) lastKnownIdx = 3;
+
+  // Show all canonical periods up to the last known finished one
+  const allPeriods = CANONICAL_PERIODS.slice(0, lastKnownIdx + 1);
+
+  function getTransitionLabel(prev, next) {
+    const prevType = periodType(prev);
+    const nextType = periodType(next);
+    if (prevType === 'regular' && nextType === 'regular') return 'Half Time';
+    if (prevType === 'regular' && nextType === 'et') return 'End of Full Time';
+    if (prevType === 'et' && nextType === 'et') return 'Half Time (Extra Time)';
+    return '';
+  }
+
+  // Build sections for rendering
+  const sections = [];
+  for (let i = 0; i < allPeriods.length; i++) {
+    const p = allPeriods[i];
+    if (i > 0) {
+      const label = getTransitionLabel(allPeriods[i - 1], p);
+      if (label) sections.push({ type: 'transition', label });
+    }
+    sections.push({ type: 'header', label: PERIOD_LABEL[p] || `Period ${p}` });
+    const evts = byPeriod[p] || [];
+    const teamEvts = evts.filter(e => parseInt(e.team_id) === parseInt(homeTeamId) || parseInt(e.team_id) === parseInt(awayTeamId));
+    const neutralEvts = evts.filter(e => !e.team_id || (parseInt(e.team_id) !== parseInt(homeTeamId) && parseInt(e.team_id) !== parseInt(awayTeamId)));
+    if (teamEvts.length === 0 && neutralEvts.length === 0) {
+      sections.push({ type: 'empty' });
+    } else {
+      if (teamEvts.length > 0) sections.push({ type: 'teamEvents', events: teamEvts });
+      if (neutralEvts.length > 0) sections.push({ type: 'neutralEvents', events: neutralEvts });
+    }
+  }
+  // Penalty shootout summary
+  if (hasPenScores) {
+    sections.push({ type: 'penaltyShootout', label: `Penalty Shootout (${fixture.home_pen_score}-${fixture.away_pen_score})` });
+  }
+  const lastPeriod = allPeriods[allPeriods.length - 1];
+  if (hasPenScores) {
+    sections.push({ type: 'transition', label: 'Full Time (After Penalties)' });
+  } else if (lastPeriod >= 7) {
+    sections.push({ type: 'transition', label: 'End of Extra Time' });
+  } else if (lastPeriod >= 3) {
+    sections.push({ type: 'transition', label: 'Full Time' });
+  }
+
+  // Collect unique minutes within a period for rendering
+  function getMinuteGroups(evts) {
+    const uniqueMinutes = [...new Set(evts.map(e => parseMinute(e.minute)))];
+    uniqueMinutes.sort((a, b) => a - b);
+    return uniqueMinutes.map(m => {
+      const minuteEvents = evts.filter(e => parseMinute(e.minute) === m);
+      return { minute: m, events: minuteEvents };
+    });
+  }
+
+  function renderMinuteLabel(evts) {
+    const raw = evts[0]?.minute;
+    if (raw && !/^\d+$/.test(String(raw))) {
+      return `${raw}'`;
+    }
+    return `${parseMinute(evts[0]?.minute)}'`;
+  }
+
+  function renderMinuteRow(group) {
+    const { minute, events: minuteEvents } = group;
+    const homeMinEvents = minuteEvents.filter(e => parseInt(e.team_id) === parseInt(homeTeamId));
+    const awayMinEvents = minuteEvents.filter(e => parseInt(e.team_id) === parseInt(awayTeamId));
+
     return (
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '8px 0' }}>
-        <div style={{ flex: 1, height: 1, background: 'var(--color-text-muted)', opacity: 0.3 }} />
-        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', letterSpacing: 1, textTransform: 'uppercase' }}>Half Time</div>
-        <div style={{ flex: 1, height: 1, background: 'var(--color-text-muted)', opacity: 0.3 }} />
+      <div key={minute} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
+          {homeMinEvents.map((e, i) => (
+            <div key={e.id || i} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, padding: '4px 8px', borderRadius: 6, background: 'rgba(255,255,255,0.02)' }}>
+              {renderEventContent(e, 'home')}
+            </div>
+          ))}
+        </div>
+        <div style={{ width: 40, textAlign: 'center', fontWeight: 700, color: 'var(--color-text-muted)', fontSize: 12, paddingTop: 4, flexShrink: 0 }}>
+          {renderMinuteLabel(minuteEvents)}
+        </div>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2 }}>
+          {awayMinEvents.map((e, i) => (
+            <div key={e.id || i} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, padding: '4px 8px', borderRadius: 6, background: 'rgba(255,255,255,0.02)' }}>
+              {renderEventContent(e, 'away')}
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -291,67 +429,55 @@ function TimelineTab({ events, homeTeamId, awayTeamId, homeTeam, awayTeam, fixtu
         </div>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        {allMinutes.map((minute, idx) => {
-          const prevMinute = idx > 0 ? allMinutes[idx - 1] : null;
-
-          const minuteEvents = validEvents.filter(e => parseMinute(e.minute) === minute).sort((a, b) => (a.id || 0) - (b.id || 0));
-          const showHalftime = (() => {
-            if (prevMinute === null || minuteEvents.length === 0) return false;
-            const prevPeriods = validEvents.filter(e => parseMinute(e.minute) === prevMinute).map(e => e.period || 0);
-            const curPeriods = minuteEvents.map(e => e.period || 0);
-            return Math.min(...curPeriods) > Math.max(...prevPeriods);
-          })();
-
-          const homeMinEvents = minuteEvents.filter(e => parseInt(e.team_id) === parseInt(homeTeamId));
-          const awayMinEvents = minuteEvents.filter(e => parseInt(e.team_id) === parseInt(awayTeamId));
-          const neutralMinEvents = minuteEvents.filter(e => !e.team_id || (parseInt(e.team_id) !== parseInt(homeTeamId) && parseInt(e.team_id) !== parseInt(awayTeamId)));
-
-          function renderMinuteLabel() {
-            const raw = minuteEvents[0]?.minute;
-            if (raw && !/^\d+$/.test(String(raw))) {
-              return `${raw}'`;
-            }
-            return `${minute}'`;
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+        {sections.map((section, si) => {
+          if (section.type === 'transition') {
+            return <TransitionRow key={si} label={section.label} />;
           }
-
-          return (
-            <React.Fragment key={minute}>
-              {showHalftime && <HalftimeRow />}
-              <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
-                  {homeMinEvents.map((e, i) => (
-                    <div key={e.id || i} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, padding: '4px 8px', borderRadius: 6, background: 'rgba(255,255,255,0.02)' }}>
-                      {renderEventContent(e, 'home')}
-                    </div>
-                  ))}
-                </div>
-                <div style={{ width: 40, textAlign: 'center', fontWeight: 700, color: 'var(--color-text-muted)', fontSize: 12, paddingTop: 4, flexShrink: 0 }}>
-                  {renderMinuteLabel()}
-                </div>
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2 }}>
-                  {awayMinEvents.map((e, i) => (
-                    <div key={e.id || i} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, padding: '4px 8px', borderRadius: 6, background: 'rgba(255,255,255,0.02)' }}>
-                      {renderEventContent(e, 'away')}
-                    </div>
-                  ))}
-                </div>
+          if (section.type === 'header') {
+            return <PeriodHeader key={si} label={section.label} />;
+          }
+          if (section.type === 'empty') {
+            return (
+              <div key={si} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '8px 0' }}>
+                <div style={{ flex: 1, height: 1, background: 'var(--color-text-muted)', opacity: 0.15 }} />
+                <div style={{ width: 40, textAlign: 'center', fontSize: 11, color: 'var(--color-text-muted)', fontStyle: 'italic' }}>No events</div>
+                <div style={{ flex: 1, height: 1, background: 'var(--color-text-muted)', opacity: 0.15 }} />
               </div>
-            </React.Fragment>
-          );
+            );
+          }
+          if (section.type === 'penaltyShootout') {
+            return (
+              <div key={si} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '12px 0' }}>
+                <div style={{ flex: 1, height: 1, background: 'var(--color-accent)', opacity: 0.3 }} />
+                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-accent)', letterSpacing: 1, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{section.label}</div>
+                <div style={{ flex: 1, height: 1, background: 'var(--color-accent)', opacity: 0.3 }} />
+              </div>
+            );
+          }
+          if (section.type === 'teamEvents') {
+            const groups = getMinuteGroups(section.events);
+            return (
+              <div key={si} style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: '4px 0' }}>
+                {groups.map(g => renderMinuteRow(g))}
+              </div>
+            );
+          }
+          if (section.type === 'neutralEvents') {
+            return (
+              <div key={si} style={{ padding: '8px', borderRadius: 8, background: 'rgba(255,255,255,0.02)', marginBottom: 4 }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-text-muted)', marginBottom: 4 }}>Other</div>
+                {section.events.sort((a, b) => parseMinute(a.minute) - parseMinute(b.minute)).map((e, i) => (
+                  <div key={e.id || i} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, padding: '2px 0' }}>
+                    <span style={{ width: 30, fontWeight: 700, color: 'var(--color-text-muted)' }}>{e.minute && !/^\d+$/.test(String(e.minute)) ? `${e.minute}'` : `${parseMinute(e.minute)}'`}</span>
+                    {renderEventContent(e, 'neutral')}
+                  </div>
+                ))}
+              </div>
+            );
+          }
+          return null;
         })}
-        {showHalftimeEnd && <HalftimeRow />}
-        {neutralEvents.length > 0 && (
-          <div style={{ marginTop: 12, padding: '8px', borderRadius: 8, background: 'rgba(255,255,255,0.02)' }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-text-muted)', marginBottom: 4 }}>Other</div>
-            {neutralEvents.sort((a, b) => (a.id || 0) - (b.id || 0)).map((e, i) => (
-              <div key={e.id || i} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, padding: '2px 0' }}>
-                <span style={{ width: 30, fontWeight: 700, color: 'var(--color-text-muted)' }}>{e.minute && !/^\d+$/.test(String(e.minute)) ? `${e.minute}'` : `${parseMinute(e.minute)}'`}</span>
-                {renderEventContent(e, 'neutral')}
-              </div>
-            ))}
-          </div>
-        )}
       </div>
     </div>
   );
@@ -575,6 +701,53 @@ function BookingsTab({ events, homeTeamId, awayTeamId, homeTeam, awayTeam }) {
           {awayTeam?.name || 'Away'}
         </div>
         {renderBookingList(awayBookings)}
+      </div>
+    </div>
+  );
+}
+
+function PenaltiesTab({ events, fixture, homeTeamId, awayTeamId, homeTeam, awayTeam }) {
+  const pens = events.filter(e => e.period >= 10 && e.type === 'GOAL');
+
+  const homePens = pens.filter(e => parseInt(e.team_id) === parseInt(homeTeamId));
+  const awayPens = pens.filter(e => parseInt(e.team_id) === parseInt(awayTeamId));
+
+  function renderPenaltyList(list) {
+    if (list.length === 0) return <div style={{ fontSize: 12, color: 'var(--color-text-muted)', padding: '8px 0' }}>No penalties recorded.</div>;
+    return list.map((p, i) => (
+      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, padding: '6px 0' }}>
+        <span style={{ fontSize: 16, flexShrink: 0 }}>✅</span>
+        <span style={{ flex: 1, fontWeight: 500 }}>{p.player_name}</span>
+        <span style={{ fontSize: 11, color: '#48BB78', fontWeight: 600 }}>
+          Scored
+        </span>
+      </div>
+    ));
+  }
+
+  return (
+    <div>
+      <div style={{ textAlign: 'center', marginBottom: 16 }}>
+        <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--color-accent)' }}>
+          {fixture.home_pen_score ?? '-'} : {fixture.away_pen_score ?? '-'}
+        </div>
+        <div style={{ fontSize: 11, color: 'var(--color-text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          Penalty Shootout
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: 16 }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8, color: 'var(--color-accent)', textAlign: 'center' }}>
+            {homeTeam?.name || 'Home'}
+          </div>
+          {renderPenaltyList(homePens)}
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8, color: 'var(--color-accent)', textAlign: 'center' }}>
+            {awayTeam?.name || 'Away'}
+          </div>
+          {renderPenaltyList(awayPens)}
+        </div>
       </div>
     </div>
   );

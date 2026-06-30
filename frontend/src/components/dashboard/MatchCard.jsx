@@ -145,6 +145,11 @@ export default function MatchCard({ fixture, homeTeam, awayTeam, participants, t
             <>
               <span style={{ color: 'var(--color-text)', whiteSpace: 'nowrap' }}>
                 {fixture.home_score ?? '-'}:{fixture.away_score ?? '-'}
+                {isFinished && fixture.home_pen_score != null && (
+                  <span style={{ fontSize: 11, color: 'var(--color-text-muted)', fontWeight: 600, marginLeft: 3 }}>
+                    ({fixture.home_pen_score}:{fixture.away_pen_score})
+                  </span>
+                )}
               </span>
               {(fixture.home_ht_score ?? fixture.away_ht_score) != null && (
                 <div style={{ fontSize: 10, fontWeight: 500, color: 'var(--color-text-muted)', whiteSpace: 'nowrap', marginTop: 1 }}>

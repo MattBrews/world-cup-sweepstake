@@ -28,7 +28,16 @@ function getTeamQualificationStatus(teamId, engineResults, fixtures) {
     if (ftKo.length > 0) {
       const last = ftKo.sort((a, b) => new Date(b.date) - new Date(a.date))[0];
       const h = last.home_team_id === teamId;
-      return (h ? last.home_score : last.away_score) < (h ? last.away_score : last.home_score)
+      const homeScore = last.home_score ?? 0;
+      const awayScore = last.away_score ?? 0;
+      if (homeScore === awayScore) {
+        if (last.home_pen_score != null && last.away_pen_score != null && last.home_pen_score !== last.away_pen_score) {
+          return (h ? last.home_pen_score : last.away_pen_score) < (h ? last.away_pen_score : last.home_pen_score)
+            ? 'ELIMINATED' : 'QUALIFIED';
+        }
+        return 'PENDING';
+      }
+      return (h ? homeScore : awayScore) < (h ? awayScore : homeScore)
         ? 'ELIMINATED' : 'QUALIFIED';
     }
     // Fall through to engine if no FT knockout yet
