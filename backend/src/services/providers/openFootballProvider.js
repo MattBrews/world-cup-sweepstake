@@ -34,12 +34,16 @@ export class OpenFootballProvider extends DataService {
     const matches = await this.getFixtures();
     const db = getDb();
 
-    db.prepare('DELETE FROM match_events').run();
-    db.prepare('DELETE FROM match_lineups').run();
-    db.prepare('DELETE FROM cached_top_scorers').run();
-    db.prepare('DELETE FROM cached_standings').run();
-    db.prepare('DELETE FROM cached_fixtures').run();
-    db.prepare('DELETE FROM cached_teams').run();
+    const tx = db.transaction(() => {
+      db.prepare('DELETE FROM penalty_shootout_kicks').run();
+      db.prepare('DELETE FROM match_events').run();
+      db.prepare('DELETE FROM match_lineups').run();
+      db.prepare('DELETE FROM cached_top_scorers').run();
+      db.prepare('DELETE FROM cached_standings').run();
+      db.prepare('DELETE FROM cached_fixtures').run();
+      db.prepare('DELETE FROM cached_teams').run();
+    });
+    tx();
 
     const teamGroups = {};
     for (const m of matches) {
