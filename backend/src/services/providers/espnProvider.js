@@ -58,39 +58,39 @@ export async function storePenaltyShootout(matchId, shootoutData) {
     `SELECT id, name FROM cached_teams`
   ).all();
 
+  const del = db.prepare('DELETE FROM penalty_shootout_kicks WHERE match_id = ?');
   const insert = db.prepare(
     `INSERT INTO penalty_shootout_kicks (match_id, team_id, player_name, shot_number, did_score, espn_player_id)
      VALUES (?, ?, ?, ?, ?, ?)`
   );
 
-  let count = 0;
-  for (const teamEntry of shootoutData) {
-    const team = teams.find(t => normalizeName(t.name) === normalizeName(teamEntry.team));
-    if (!team) continue;
+  const tx = db.transaction(() => {
+    del.run(matchId);
+    let count = 0;
+    for (const teamEntry of shootoutData) {
+      const team = teams.find(t => normalizeName(t.name) === normalizeName(teamEntry.team));
+      if (!team) continue;
 
-    for (const shot of teamEntry.shots || []) {
-      insert.run(
-        matchId,
-        team.id,
-        shot.player || null,
-        shot.shotNumber || 0,
-        shot.didScore ? 1 : 0,
-        shot.playerId || null
-      );
-      count++;
+      for (const shot of teamEntry.shots || []) {
+        insert.run(
+          matchId,
+          team.id,
+          shot.player || null,
+          shot.shotNumber || 0,
+          shot.didScore ? 1 : 0,
+          shot.playerId || null
+        );
+        count++;
+      }
     }
-  }
-  return count;
+    return count;
+  });
+
+  return tx();
 }
 
 export async function syncPenaltyShootout(matchId, matchDate, homeTeamName, awayTeamName) {
   const db = getDb();
-
-  const existing = db.prepare(
-    'SELECT COUNT(*) as cnt FROM penalty_shootout_kicks WHERE match_id = ?'
-  ).get(matchId);
-
-  if (existing && existing.cnt > 0) return 0;
 
   let espnGameId = db.prepare(
     'SELECT espn_game_id FROM cached_fixtures WHERE id = ?'

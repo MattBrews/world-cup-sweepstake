@@ -157,6 +157,18 @@ export function runMigrations() {
     )
   `);
 
+  // Remove any duplicate rows before creating unique index
+  db.exec(`
+    DELETE FROM penalty_shootout_kicks WHERE id NOT IN (
+      SELECT MIN(id) FROM penalty_shootout_kicks GROUP BY match_id, team_id, shot_number
+    )
+  `);
+
+  db.exec(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_pen_kicks_unique
+    ON penalty_shootout_kicks(match_id, team_id, shot_number)
+  `);
+
   // FIFA team ID to local team ID mapping
   db.exec(`
     CREATE TABLE IF NOT EXISTS cached_team_mappings (

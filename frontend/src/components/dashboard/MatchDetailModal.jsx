@@ -92,9 +92,13 @@ export default function MatchDetailModal({ publicId, matchId, onClose }) {
   }, [onClose]);
 
   useEffect(() => {
+    loadRef.current = false;
+  }, [matchId]);
+
+  useEffect(() => {
     if (data && !loadRef.current) {
       loadRef.current = true;
-      if (data.fixture?.home_pen_score != null) setTab('Penalties');
+      setTab(data.fixture?.home_pen_score != null ? 'Penalties' : 'Timeline');
     }
   }, [data]);
 
@@ -303,7 +307,7 @@ function periodType(p) {
 }
 
 function TimelineTab({ events, homeTeamId, awayTeamId, homeTeam, awayTeam, fixture }) {
-  const matchEvents = events.filter(e => e.minute != null && parseMinute(e.minute) !== null);
+  const matchEvents = events.filter(e => e.minute != null && parseMinute(e.minute) !== null && e.player_name);
 
   if (matchEvents.length === 0) {
     return <div style={{ textAlign: 'center', padding: 40, color: 'var(--color-text-muted)' }}>No events recorded.</div>;

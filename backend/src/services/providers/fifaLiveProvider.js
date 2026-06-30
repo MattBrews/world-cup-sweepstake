@@ -85,6 +85,7 @@ export class FifaLiveProvider extends DataService {
 
         db.prepare('DELETE FROM match_events WHERE match_id = ?').run(fixture.id);
         db.prepare('DELETE FROM match_lineups WHERE match_id = ?').run(fixture.id);
+        db.prepare('DELETE FROM penalty_shootout_kicks WHERE match_id = ?').run(fixture.id);
 
         const homeFormation = data.HomeTeam?.Tactics || null;
         const awayFormation = data.AwayTeam?.Tactics || null;
@@ -126,8 +127,14 @@ export class FifaLiveProvider extends DataService {
 
         const bookings = data.HomeTeam?.Bookings || [];
         for (const b of data.AwayTeam?.Bookings || []) bookings.push(b);
+        const seenBookings = new Set();
         for (const b of bookings) {
-          const playerName = findPlayerName(data, b.IdTeam, b.IdPlayer);
+          const key = b.IdPlayer
+            ? `${resolveTeamId(b.IdTeam)}:${b.IdPlayer}`
+            : `${resolveTeamId(b.IdTeam)}:${b.Minute || ''}:${b.Period || ''}`;
+          if (seenBookings.has(key)) continue;
+          seenBookings.add(key);
+          const playerName = b.PlayerName?.[0]?.Description || b.Player?.Name || (b.IdPlayer && findPlayerName(data, b.IdTeam, b.IdPlayer)) || null;
           db.prepare(
             `INSERT INTO match_events (match_id, team_id, type, minute, period, player_name, additional_info)
              VALUES (?, ?, 'BOOKING', ?, ?, ?, ?)`
@@ -381,6 +388,7 @@ export class FifaLiveProvider extends DataService {
         if (newState === MATCH_STATUS.IN_PROGRESS || newState === MATCH_STATUS.FT) {
           db.prepare('DELETE FROM match_events WHERE match_id = ?').run(fixture.id);
           db.prepare('DELETE FROM match_lineups WHERE match_id = ?').run(fixture.id);
+          db.prepare('DELETE FROM penalty_shootout_kicks WHERE match_id = ?').run(fixture.id);
 
           const goals = data.HomeTeam?.Goals || [];
           for (const g of data.AwayTeam?.Goals || []) goals.push(g);
@@ -395,8 +403,14 @@ export class FifaLiveProvider extends DataService {
 
           const bookings = data.HomeTeam?.Bookings || [];
           for (const b of data.AwayTeam?.Bookings || []) bookings.push(b);
+          const seenBookings = new Set();
           for (const b of bookings) {
-            const playerName = findPlayerName(data, b.IdTeam, b.IdPlayer);
+            const key = b.IdPlayer
+              ? `${resolveTeamId(b.IdTeam)}:${b.IdPlayer}`
+              : `${resolveTeamId(b.IdTeam)}:${b.Minute || ''}:${b.Period || ''}`;
+            if (seenBookings.has(key)) continue;
+            seenBookings.add(key);
+            const playerName = b.PlayerName?.[0]?.Description || b.Player?.Name || (b.IdPlayer && findPlayerName(data, b.IdTeam, b.IdPlayer)) || null;
             db.prepare(
               `INSERT INTO match_events (match_id, team_id, type, minute, period, player_name, additional_info)
                VALUES (?, ?, 'BOOKING', ?, ?, ?, ?)`
