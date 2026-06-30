@@ -175,6 +175,11 @@ export default function MatchDetailModal({ publicId, matchId, onClose }) {
                 <TeamHeader team={homeTeam} participantName={homeParticipant?.name} side="home" />
                 <div style={{ flexShrink: 0, textAlign: 'center' }}>
                   <div>
+                    {(fixture.status === 'FT' || fixture.status === 'IN_PROGRESS') && fixture.home_ht_score != null && fixture.away_ht_score != null && (
+                      <div style={{ fontSize: 11, color: 'var(--color-text-muted)', fontWeight: 600, marginBottom: 2 }}>
+                        HT: {fixture.home_ht_score} : {fixture.away_ht_score}
+                      </div>
+                    )}
                     <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--color-accent)' }}>
                       {fixture.status === 'FT' || fixture.status === 'IN_PROGRESS' || fixture.lifecycle_state === 'IN_PROGRESS'
                         ? `${fixture.home_score ?? '-'} : ${fixture.away_score ?? '-'}`
@@ -186,11 +191,6 @@ export default function MatchDetailModal({ publicId, matchId, onClose }) {
                       </div>
                     )}
                   </div>
-                  {(fixture.status === 'FT' || fixture.status === 'IN_PROGRESS') && fixture.home_ht_score != null && fixture.away_ht_score != null && (
-                    <div style={{ fontSize: 11, color: 'var(--color-text-muted)', fontWeight: 600 }}>
-                      HT: {fixture.home_ht_score} : {fixture.away_ht_score}
-                    </div>
-                  )}
                 </div>
                 <TeamHeader team={awayTeam} participantName={awayParticipant?.name} side="away" />
               </div>

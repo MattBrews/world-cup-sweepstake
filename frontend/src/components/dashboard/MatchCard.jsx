@@ -143,6 +143,11 @@ export default function MatchCard({ fixture, homeTeam, awayTeam, participants, t
         }}>
           {isFinished || isLive ? (
             <>
+              {(fixture.home_ht_score ?? fixture.away_ht_score) != null && (
+                <div style={{ fontSize: 10, fontWeight: 500, color: 'var(--color-text-muted)', whiteSpace: 'nowrap', marginBottom: 1 }}>
+                  HT {fixture.home_ht_score ?? '-'}:{fixture.away_ht_score ?? '-'}
+                </div>
+              )}
               <span style={{ color: 'var(--color-text)', whiteSpace: 'nowrap' }}>
                 {fixture.home_score ?? '-'}:{fixture.away_score ?? '-'}
               </span>
@@ -155,11 +160,6 @@ export default function MatchCard({ fixture, homeTeam, awayTeam, participants, t
                   (0:0)
                 </div>
               ) : null}
-              {(fixture.home_ht_score ?? fixture.away_ht_score) != null && (
-                <div style={{ fontSize: 10, fontWeight: 500, color: 'var(--color-text-muted)', whiteSpace: 'nowrap', marginTop: 1 }}>
-                  HT {fixture.home_ht_score ?? '-'}:{fixture.away_ht_score ?? '-'}
-                </div>
-              )}
             </>
           ) : isAwaiting ? (
             <span style={{ color: 'var(--token-4)', fontSize: 13, whiteSpace: 'nowrap' }}>?:?</span>
