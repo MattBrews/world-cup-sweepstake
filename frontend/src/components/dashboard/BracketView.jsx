@@ -234,7 +234,7 @@ function RoundColumn({ matches, getTeam, teamToParticipant, fixtureMap, roundPos
   );
 }
 
-function FinalStage({ roundFixtures, getTeam, teamToParticipant, fixtureMap, roundPositions, onClick, connectorHeight = 150 }) {
+function FinalStage({ roundFixtures, getTeam, teamToParticipant, fixtureMap, roundPositions, onClick, connectorHeight = 180 }) {
   const finalMatch = (roundFixtures['Final'] || [])[0];
   const thirdMatch = (roundFixtures['3rd Place'] || [])[0];
   const connectorY = connectorHeight / 2;
@@ -275,10 +275,10 @@ function FinalStage({ roundFixtures, getTeam, teamToParticipant, fixtureMap, rou
         </div>
       </div>
       <div style={{ position: 'absolute', top: connectorY, left: 0, transform: 'translateY(-44px)', fontSize: 14, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', background: 'var(--gradient-accent)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', whiteSpace: 'nowrap' }}>🏆 Final</div>
-      <div style={{ position: 'absolute', top: `calc(${connectorY}px + 120px)`, left: 0, transform: 'translateY(-50%)', width: '100%' }}>
+      <div style={{ position: 'absolute', top: `calc(${connectorY}px + 150px)`, left: 0, transform: 'translateY(-50%)', width: '100%' }}>
         {thirdMatch && renderMatch(thirdMatch)}
       </div>
-      <div style={{ position: 'absolute', top: `calc(${connectorY}px + 120px)`, left: 0, transform: 'translateY(-44px)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>3rd Place</div>
+      <div style={{ position: 'absolute', top: `calc(${connectorY}px + 150px)`, left: 0, transform: 'translateY(-44px)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>3rd Place</div>
     </div>
   );
 }
@@ -312,7 +312,7 @@ export default function BracketView({ fixtures, allFixtures = [], teams, partici
   const r16Pairs = Math.max(Math.floor(numR16Matches / 2), 1);
   const qfPairs = Math.max(Math.floor(numQFMatches / 2), 1);
 
-  const BASE_UNIT = 150;
+  const BASE_UNIT = 180;
 
   const initialIndex = (() => {
     if (currentStage === 'Final' || currentStage === '3rd Place') return 4;
