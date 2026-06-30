@@ -109,6 +109,7 @@ export function runMigrations() {
 
   try { db.exec("ALTER TABLE cached_fixtures ADD COLUMN home_pen_score INTEGER"); } catch {}
   try { db.exec("ALTER TABLE cached_fixtures ADD COLUMN away_pen_score INTEGER"); } catch {}
+  try { db.exec("ALTER TABLE cached_fixtures ADD COLUMN espn_game_id INTEGER"); } catch {}
 
   try { db.exec("ALTER TABLE cached_fixtures ADD COLUMN home_placeholder TEXT"); } catch {}
   try { db.exec("ALTER TABLE cached_fixtures ADD COLUMN away_placeholder TEXT"); } catch {}
@@ -140,6 +141,19 @@ export function runMigrations() {
       position TEXT,
       shirt_number INTEGER,
       is_starter INTEGER
+    )
+  `);
+
+  // Penalty shootout per-kick data (from ESPN)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS penalty_shootout_kicks (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      match_id INTEGER REFERENCES cached_fixtures(id),
+      team_id INTEGER,
+      player_name TEXT,
+      shot_number INTEGER,
+      did_score INTEGER,
+      espn_player_id INTEGER
     )
   `);
 

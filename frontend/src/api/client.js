@@ -109,6 +109,10 @@ export function getMatchDetails(slug, matchId) {
   return request(`/sweepstakes/${slug}/match-details/${matchId}`);
 }
 
+export function getPenaltyShootout(slug, matchId) {
+  return request(`/sweepstakes/${slug}/penalty-shootout/${matchId}`);
+}
+
 export function getStats(slug, type) {
   const qs = type ? `?type=${type}` : '';
   return request(`/sweepstakes/${slug}/stats${qs}`);

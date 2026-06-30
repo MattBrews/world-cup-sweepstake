@@ -1,6 +1,7 @@
 import { DataService, MATCH_STATUS } from './dataService.js';
 import fetch from 'node-fetch';
 import { getDb } from '../../db/connection.js';
+import { syncPenaltyShootout } from './espnProvider.js';
 
 const DELAY_MS = 300;
 
@@ -62,7 +63,7 @@ export class FifaLiveProvider extends DataService {
     const db = getDb();
 
     const fixtures = db.prepare(
-      `SELECT id, api_match_id, last_synced_at FROM cached_fixtures
+      `SELECT id, api_match_id, home_team_id, away_team_id, last_synced_at FROM cached_fixtures
        WHERE api_match_id IS NOT NULL
          AND lifecycle_state = 'FT'
          AND (last_synced_at IS NULL OR datetime(last_synced_at, '+30 minutes') < datetime('now'))`
@@ -93,8 +94,8 @@ export class FifaLiveProvider extends DataService {
           .map(o => o.Name?.[0]?.Description)
           .filter(Boolean)[0] || null;
 
-        const homePenScore = data.HomeTeam?.PenaltyKicks ?? null;
-        const awayPenScore = data.AwayTeam?.PenaltyKicks ?? null;
+        const homePenScore = data.HomeTeamPenaltyScore ?? null;
+        const awayPenScore = data.AwayTeamPenaltyScore ?? null;
 
         db.prepare(
           `UPDATE cached_fixtures
@@ -162,24 +163,6 @@ export class FifaLiveProvider extends DataService {
           totalEvents++;
         }
 
-        if (data.Penalties) {
-          for (const p of data.Penalties) {
-            const playerName = p.Player?.Name || p.PlayerName?.[0]?.Description || null;
-            db.prepare(
-              `INSERT INTO match_events (match_id, team_id, type, minute, period, player_name, additional_info)
-               VALUES (?, ?, 'PENALTY', ?, ?, ?, ?)`
-            ).run(
-              fixture.id,
-              resolveTeamId(p.Team?.Id),
-              null,
-              null,
-              playerName,
-              JSON.stringify({ scored: !!p.Scored })
-            );
-            totalEvents++;
-          }
-        }
-
         for (const side of ['HomeTeam', 'AwayTeam']) {
           const team = data[side];
           if (!team) continue;
@@ -208,6 +191,15 @@ export class FifaLiveProvider extends DataService {
           `UPDATE cached_fixtures SET lifecycle_state = 'COMPLETE' WHERE id = ?`
         ).run(fixture.id);
 
+        const fixtureRow = db.prepare('SELECT home_pen_score, away_pen_score, date FROM cached_fixtures WHERE id = ?').get(fixture.id);
+        if (fixtureRow?.home_pen_score != null && fixtureRow?.away_pen_score != null) {
+          const homeTeamRow = db.prepare('SELECT name FROM cached_teams WHERE id = ?').get(fixture.home_team_id);
+          const awayTeamRow = db.prepare('SELECT name FROM cached_teams WHERE id = ?').get(fixture.away_team_id);
+          if (homeTeamRow && awayTeamRow) {
+            await syncPenaltyShootout(fixture.id, fixtureRow.date, homeTeamRow.name, awayTeamRow.name);
+          }
+        }
+
         updated++;
       } catch (err) {
         console.log(`[fifaLive] Error match ${fixture.id}: ${err.message}`);
@@ -217,6 +209,8 @@ export class FifaLiveProvider extends DataService {
     console.log(`[fifaLive] Updated ${updated} matches (${totalEvents} events, ${totalLineups} lineups)`);
 
     this.backfillPenaltyScores();
+
+    await this.backfillEspnShootoutKicks();
 
     this.recalculateTopScorers();
 
@@ -350,8 +344,8 @@ export class FifaLiveProvider extends DataService {
           updateValues.push(homeScore, awayScore);
         }
 
-        const homePenScore = data.HomeTeam?.PenaltyKicks ?? null;
-        const awayPenScore = data.AwayTeam?.PenaltyKicks ?? null;
+        const homePenScore = data.HomeTeamPenaltyScore ?? null;
+        const awayPenScore = data.AwayTeamPenaltyScore ?? null;
         if (homePenScore !== null && awayPenScore !== null) {
           updateFields.push('home_pen_score = ?', 'away_pen_score = ?');
           updateValues.push(homePenScore, awayPenScore);
@@ -422,16 +416,6 @@ export class FifaLiveProvider extends DataService {
             ).run(fixture.id, resolveTeamId(s.IdTeam), s.Minute || null, s.Period || null, `${playerOff} → ${playerOn}`, JSON.stringify({ playerOff, playerOn }));
           }
 
-          if (data.Penalties) {
-            for (const p of data.Penalties) {
-              const playerName = p.Player?.Name || p.PlayerName?.[0]?.Description || null;
-              db.prepare(
-                `INSERT INTO match_events (match_id, team_id, type, minute, period, player_name, additional_info)
-                 VALUES (?, ?, 'PENALTY', ?, ?, ?, ?)`
-              ).run(fixture.id, resolveTeamId(p.Team?.Id), null, null, playerName, JSON.stringify({ scored: !!p.Scored }));
-            }
-          }
-
           for (const side of ['HomeTeam', 'AwayTeam']) {
             const team = data[side];
             if (!team) continue;
@@ -447,6 +431,15 @@ export class FifaLiveProvider extends DataService {
 
         this._updatePenaltyScoresFromEvents(fixture.id, fixture.home_team_id, fixture.away_team_id);
 
+        const liveFixtureRow = db.prepare('SELECT home_pen_score, away_pen_score, date FROM cached_fixtures WHERE id = ?').get(fixture.id);
+        if (liveFixtureRow?.home_pen_score != null && liveFixtureRow?.away_pen_score != null) {
+          const homeTeamRow = db.prepare('SELECT name FROM cached_teams WHERE id = ?').get(fixture.home_team_id);
+          const awayTeamRow = db.prepare('SELECT name FROM cached_teams WHERE id = ?').get(fixture.away_team_id);
+          if (homeTeamRow && awayTeamRow) {
+            await syncPenaltyShootout(fixture.id, liveFixtureRow.date, homeTeamRow.name, awayTeamRow.name);
+          }
+        }
+
         updated++;
       } catch (err) {
         console.log(`[fifaLive] Error syncing live match ${fixture.id}: ${err.message}`);
@@ -454,6 +447,8 @@ export class FifaLiveProvider extends DataService {
     }
 
     this.backfillPenaltyScores();
+
+    await this.backfillEspnShootoutKicks();
 
     return { updated };
   }
@@ -519,5 +514,35 @@ export class FifaLiveProvider extends DataService {
       updated++;
     }
     console.log(`[fifaLive] Backfilled penalty scores for ${updated} matches`);
+  }
+
+  async backfillEspnShootoutKicks() {
+    const db = getDb();
+    const matches = db.prepare(
+      `SELECT f.id, f.home_team_id, f.away_team_id, f.date
+       FROM cached_fixtures f
+       WHERE f.home_pen_score IS NOT NULL AND f.away_pen_score IS NOT NULL
+         AND NOT EXISTS (
+           SELECT 1 FROM penalty_shootout_kicks k WHERE k.match_id = f.id
+         )
+       ORDER BY f.date`
+    ).all();
+
+    if (matches.length === 0) return 0;
+
+    let synced = 0;
+    for (const m of matches) {
+      const homeTeam = db.prepare('SELECT name FROM cached_teams WHERE id = ?').get(m.home_team_id);
+      const awayTeam = db.prepare('SELECT name FROM cached_teams WHERE id = ?').get(m.away_team_id);
+      if (homeTeam && awayTeam) {
+        const count = await syncPenaltyShootout(m.id, m.date, homeTeam.name, awayTeam.name);
+        if (count > 0) synced++;
+      }
+      await delay(DELAY_MS);
+    }
+    if (synced > 0) {
+      console.log(`[fifaLive] Backfilled ESPN shootout data for ${synced} matches`);
+    }
+    return synced;
   }
 }

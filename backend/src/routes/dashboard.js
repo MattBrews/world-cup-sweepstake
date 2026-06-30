@@ -229,6 +229,19 @@ router.get('/:ref/match-details/:matchId', (req, res) => {
   });
 });
 
+router.get('/:ref/penalty-shootout/:matchId', (req, res) => {
+  const db = getDb();
+
+  const fixture = db.prepare('SELECT * FROM cached_fixtures WHERE id = ?').get(req.params.matchId);
+  if (!fixture) return res.status(404).json({ error: 'Match not found' });
+
+  const kicks = db.prepare(
+    'SELECT * FROM penalty_shootout_kicks WHERE match_id = ? ORDER BY team_id, shot_number'
+  ).all(req.params.matchId);
+
+  res.json({ fixture, kicks });
+});
+
 router.get('/:ref/stats', (req, res) => {
   const db = getDb();
   const { type } = req.query;

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getMatchDetails } from '../../api/client';
+import { getMatchDetails, getPenaltyShootout } from '../../api/client';
 
 const TABS = ['Timeline', 'Line-ups', 'Bookings', 'Penalties'];
 
@@ -229,7 +229,7 @@ export default function MatchDetailModal({ publicId, matchId, onClose }) {
             <BookingsTab events={events} homeTeamId={fixture?.home_team_id} awayTeamId={fixture?.away_team_id} homeTeam={homeTeam} awayTeam={awayTeam} />
           )}
           {!loading && data && tab === 'Penalties' && (
-            <PenaltiesTab events={events} fixture={fixture} homeTeamId={fixture?.home_team_id} awayTeamId={fixture?.away_team_id} homeTeam={homeTeam} awayTeam={awayTeam} />
+            <PenaltiesTab slug={publicId} events={events} fixture={fixture} homeTeamId={fixture?.home_team_id} awayTeamId={fixture?.away_team_id} homeTeam={homeTeam} awayTeam={awayTeam} />
           )}
         </div>
       </div>
@@ -708,24 +708,109 @@ function BookingsTab({ events, homeTeamId, awayTeamId, homeTeam, awayTeam }) {
   );
 }
 
-function PenaltiesTab({ events, fixture, homeTeamId, awayTeamId, homeTeam, awayTeam }) {
-  const pens = events.filter(e => e.period >= 10 && e.type === 'GOAL');
+function PenaltiesTab({ slug, events, fixture, homeTeamId, awayTeamId, homeTeam, awayTeam }) {
+  const [kicks, setKicks] = useState(null);
+  const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    setLoading(true);
+    getPenaltyShootout(slug, fixture?.id)
+      .then(data => {
+        setKicks(data?.kicks || []);
+        setLoading(false);
+      })
+      .catch(() => {
+        setKicks([]);
+        setLoading(false);
+      });
+  }, [slug, fixture?.id]);
+
+  if (loading) {
+    return <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--color-text-muted)', fontSize: 12 }}>Loading...</div>;
+  }
+
+  if (kicks && kicks.length > 0) {
+    const homeKicks = kicks.filter(k => parseInt(k.team_id) === parseInt(homeTeamId));
+    const awayKicks = kicks.filter(k => parseInt(k.team_id) === parseInt(awayTeamId));
+    const totalRounds = Math.max(homeKicks.length, awayKicks.length);
+    const homeScored = homeKicks.filter(k => k.did_score).length;
+    const awayScored = awayKicks.filter(k => k.did_score).length;
+
+    function outcomeIcon(kick) {
+      return kick.did_score ? '✅' : '❌';
+    }
+
+    function outcomeLabel(kick) {
+      return kick.did_score ? 'Scored' : 'Missed';
+    }
+
+    function outcomeColor(kick) {
+      return kick.did_score ? '#48BB78' : '#FC8181';
+    }
+
+    return (
+      <div>
+        <div style={{ textAlign: 'center', marginBottom: 16 }}>
+          <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--color-accent)' }}>
+            {homeScored}/{homeKicks.length} : {awayScored}/{awayKicks.length}
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--color-text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Penalty Shootout
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 16 }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8, color: 'var(--color-accent)', textAlign: 'center' }}>
+              {homeTeam?.name || 'Home'}
+            </div>
+            {Array.from({ length: totalRounds }, (_, i) => {
+              const kick = homeKicks[i];
+              return (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, padding: '6px 0' }}>
+                  <span style={{ fontSize: 16, flexShrink: 0, width: 20 }}>{kick ? outcomeIcon(kick) : ''}</span>
+                  <span style={{ flex: 1, fontWeight: 500 }}>{kick ? kick.player_name : ''}</span>
+                  <span style={{ fontSize: 11, color: kick ? outcomeColor(kick) : 'transparent', fontWeight: 600 }}>
+                    {kick ? outcomeLabel(kick) : ''}
+                  </span>
+                </div>
+              );
+            })}
+            {homeKicks.length > 0 && (
+              <div style={{ fontSize: 11, color: 'var(--color-text-muted)', fontWeight: 600, marginTop: 8, textAlign: 'center' }}>
+                {homeScored} scored, {homeKicks.length - homeScored} missed
+              </div>
+            )}
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8, color: 'var(--color-accent)', textAlign: 'center' }}>
+              {awayTeam?.name || 'Away'}
+            </div>
+            {Array.from({ length: totalRounds }, (_, i) => {
+              const kick = awayKicks[i];
+              return (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, padding: '6px 0' }}>
+                  <span style={{ fontSize: 16, flexShrink: 0, width: 20 }}>{kick ? outcomeIcon(kick) : ''}</span>
+                  <span style={{ flex: 1, fontWeight: 500 }}>{kick ? kick.player_name : ''}</span>
+                  <span style={{ fontSize: 11, color: kick ? outcomeColor(kick) : 'transparent', fontWeight: 600 }}>
+                    {kick ? outcomeLabel(kick) : ''}
+                  </span>
+                </div>
+              );
+            })}
+            {awayKicks.length > 0 && (
+              <div style={{ fontSize: 11, color: 'var(--color-text-muted)', fontWeight: 600, marginTop: 8, textAlign: 'center' }}>
+                {awayScored} scored, {awayKicks.length - awayScored} missed
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const pens = events.filter(e => e.period >= 10 && e.type === 'GOAL');
   const homePens = pens.filter(e => parseInt(e.team_id) === parseInt(homeTeamId));
   const awayPens = pens.filter(e => parseInt(e.team_id) === parseInt(awayTeamId));
-
-  function renderPenaltyList(list) {
-    if (list.length === 0) return <div style={{ fontSize: 12, color: 'var(--color-text-muted)', padding: '8px 0' }}>No penalties recorded.</div>;
-    return list.map((p, i) => (
-      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, padding: '6px 0' }}>
-        <span style={{ fontSize: 16, flexShrink: 0 }}>✅</span>
-        <span style={{ flex: 1, fontWeight: 500 }}>{p.player_name}</span>
-        <span style={{ fontSize: 11, color: '#48BB78', fontWeight: 600 }}>
-          Scored
-        </span>
-      </div>
-    ));
-  }
 
   return (
     <div>
@@ -742,13 +827,29 @@ function PenaltiesTab({ events, fixture, homeTeamId, awayTeamId, homeTeam, awayT
           <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8, color: 'var(--color-accent)', textAlign: 'center' }}>
             {homeTeam?.name || 'Home'}
           </div>
-          {renderPenaltyList(homePens)}
+          {homePens.length === 0 ? (
+            <div style={{ fontSize: 12, color: 'var(--color-text-muted)', padding: '8px 0' }}>No penalties recorded.</div>
+          ) : homePens.map((p, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, padding: '6px 0' }}>
+              <span style={{ fontSize: 16, flexShrink: 0 }}>✅</span>
+              <span style={{ flex: 1, fontWeight: 500 }}>{p.player_name}</span>
+              <span style={{ fontSize: 11, color: '#48BB78', fontWeight: 600 }}>Scored</span>
+            </div>
+          ))}
         </div>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8, color: 'var(--color-accent)', textAlign: 'center' }}>
             {awayTeam?.name || 'Away'}
           </div>
-          {renderPenaltyList(awayPens)}
+          {awayPens.length === 0 ? (
+            <div style={{ fontSize: 12, color: 'var(--color-text-muted)', padding: '8px 0' }}>No penalties recorded.</div>
+          ) : awayPens.map((p, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, padding: '6px 0' }}>
+              <span style={{ fontSize: 16, flexShrink: 0 }}>✅</span>
+              <span style={{ flex: 1, fontWeight: 500 }}>{p.player_name}</span>
+              <span style={{ fontSize: 11, color: '#48BB78', fontWeight: 600 }}>Scored</span>
+            </div>
+          ))}
         </div>
       </div>
     </div>
