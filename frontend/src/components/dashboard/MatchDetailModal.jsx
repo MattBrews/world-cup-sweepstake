@@ -92,11 +92,11 @@ export default function MatchDetailModal({ publicId, matchId, onClose }) {
   }, [onClose]);
 
   useEffect(() => {
-    if (fixture && !loadRef.current) {
+    if (data && !loadRef.current) {
       loadRef.current = true;
-      if (fixture.home_pen_score != null) setTab('Penalties');
+      if (data.fixture?.home_pen_score != null) setTab('Penalties');
     }
-  }, [fixture]);
+  }, [data]);
 
   if (!matchId) return null;
 
