@@ -752,7 +752,7 @@ function PenaltiesTab({ slug, events, fixture, homeTeamId, awayTeamId, homeTeam,
       <div>
         <div style={{ textAlign: 'center', marginBottom: 16 }}>
           <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--color-accent)' }}>
-            {homeScored}/{homeKicks.length} : {awayScored}/{awayKicks.length}
+            {fixture.home_pen_score} - {fixture.away_pen_score}
           </div>
           <div style={{ fontSize: 11, color: 'var(--color-text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             Penalty Shootout
