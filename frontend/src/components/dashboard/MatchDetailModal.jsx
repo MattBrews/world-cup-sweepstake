@@ -159,14 +159,16 @@ export default function MatchDetailModal({ publicId, matchId, onClose }) {
               <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
                 <TeamHeader team={homeTeam} participantName={homeParticipant?.name} side="home" />
                 <div style={{ flexShrink: 0, textAlign: 'center' }}>
-                  <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--color-accent)' }}>
-                    {fixture.status === 'FT' || fixture.status === 'IN_PROGRESS' || fixture.lifecycle_state === 'IN_PROGRESS'
-                      ? `${fixture.home_score ?? '-'} : ${fixture.away_score ?? '-'}`
-                      : 'vs'}
+                  <div>
+                    <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--color-accent)' }}>
+                      {fixture.status === 'FT' || fixture.status === 'IN_PROGRESS' || fixture.lifecycle_state === 'IN_PROGRESS'
+                        ? `${fixture.home_score ?? '-'} : ${fixture.away_score ?? '-'}`
+                        : 'vs'}
+                    </div>
                     {fixture.status === 'FT' && fixture.home_pen_score != null && (
-                      <span style={{ fontSize: 16, color: 'var(--color-text-muted)', fontWeight: 600, marginLeft: 6 }}>
+                      <div style={{ fontSize: 13, color: 'var(--color-text-muted)', fontWeight: 600, marginTop: 2 }}>
                         ({fixture.home_pen_score} : {fixture.away_pen_score})
-                      </span>
+                      </div>
                     )}
                   </div>
                   {(fixture.status === 'FT' || fixture.status === 'IN_PROGRESS') && fixture.home_ht_score != null && fixture.away_ht_score != null && (
