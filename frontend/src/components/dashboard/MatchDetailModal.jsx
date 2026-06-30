@@ -1,7 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { getMatchDetails, getPenaltyShootout } from '../../api/client';
-
-const TABS = ['Timeline', 'Line-ups', 'Bookings', 'Penalties'];
 
 function shortRound(stage) {
   const m = {
@@ -69,6 +67,7 @@ export default function MatchDetailModal({ publicId, matchId, onClose }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('Timeline');
+  const loadRef = useRef(false);
 
   useEffect(() => {
     if (!matchId) return;
@@ -92,6 +91,13 @@ export default function MatchDetailModal({ publicId, matchId, onClose }) {
     return () => window.removeEventListener('keydown', handleEsc);
   }, [onClose]);
 
+  useEffect(() => {
+    if (fixture && !loadRef.current) {
+      loadRef.current = true;
+      if (fixture.home_pen_score != null) setTab('Penalties');
+    }
+  }, [fixture]);
+
   if (!matchId) return null;
 
   const fixture = data?.fixture;
@@ -104,6 +110,11 @@ export default function MatchDetailModal({ publicId, matchId, onClose }) {
 
   const homeParticipant = participants.find(p => Number(p.team_id) === Number(homeTeam?.id));
   const awayParticipant = participants.find(p => Number(p.team_id) === Number(awayTeam?.id));
+
+  const hasPenalties = fixture?.home_pen_score != null;
+  const tabList = hasPenalties
+    ? ['Penalties', 'Timeline', 'Line-ups', 'Bookings']
+    : ['Timeline', 'Line-ups', 'Bookings'];
 
   return (
     <div
@@ -193,7 +204,7 @@ export default function MatchDetailModal({ publicId, matchId, onClose }) {
               </div>
 
               <div style={{ marginBottom: 8, display: 'flex', gap: 4 }}>
-                {TABS.filter(t => t !== 'Penalties' || fixture.home_pen_score != null).map(t => (
+                {tabList.map(t => (
                   <button
                     key={t}
                     onClick={() => setTab(t)}
@@ -733,20 +744,6 @@ function PenaltiesTab({ slug, events, fixture, homeTeamId, awayTeamId, homeTeam,
     const homeKicks = kicks.filter(k => parseInt(k.team_id) === parseInt(homeTeamId));
     const awayKicks = kicks.filter(k => parseInt(k.team_id) === parseInt(awayTeamId));
     const totalRounds = Math.max(homeKicks.length, awayKicks.length);
-    const homeScored = homeKicks.filter(k => k.did_score).length;
-    const awayScored = awayKicks.filter(k => k.did_score).length;
-
-    function outcomeIcon(kick) {
-      return kick.did_score ? '✅' : '❌';
-    }
-
-    function outcomeLabel(kick) {
-      return kick.did_score ? 'Scored' : 'Missed';
-    }
-
-    function outcomeColor(kick) {
-      return kick.did_score ? '#48BB78' : '#FC8181';
-    }
 
     return (
       <div>
@@ -758,52 +755,32 @@ function PenaltiesTab({ slug, events, fixture, homeTeamId, awayTeamId, homeTeam,
             Penalty Shootout
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 16 }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8, color: 'var(--color-accent)', textAlign: 'center' }}>
-              {homeTeam?.name || 'Home'}
-            </div>
-            {Array.from({ length: totalRounds }, (_, i) => {
-              const kick = homeKicks[i];
-              return (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, padding: '6px 0' }}>
-                  <span style={{ fontSize: 16, flexShrink: 0, width: 20 }}>{kick ? outcomeIcon(kick) : ''}</span>
-                  <span style={{ flex: 1, fontWeight: 500 }}>{kick ? kick.player_name : ''}</span>
-                  <span style={{ fontSize: 11, color: kick ? outcomeColor(kick) : 'transparent', fontWeight: 600 }}>
-                    {kick ? outcomeLabel(kick) : ''}
-                  </span>
-                </div>
-              );
-            })}
-            {homeKicks.length > 0 && (
-              <div style={{ fontSize: 11, color: 'var(--color-text-muted)', fontWeight: 600, marginTop: 8, textAlign: 'center' }}>
-                {homeScored} scored, {homeKicks.length - homeScored} missed
-              </div>
-            )}
-          </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8, color: 'var(--color-accent)', textAlign: 'center' }}>
-              {awayTeam?.name || 'Away'}
-            </div>
-            {Array.from({ length: totalRounds }, (_, i) => {
-              const kick = awayKicks[i];
-              return (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, padding: '6px 0' }}>
-                  <span style={{ fontSize: 16, flexShrink: 0, width: 20 }}>{kick ? outcomeIcon(kick) : ''}</span>
-                  <span style={{ flex: 1, fontWeight: 500 }}>{kick ? kick.player_name : ''}</span>
-                  <span style={{ fontSize: 11, color: kick ? outcomeColor(kick) : 'transparent', fontWeight: 600 }}>
-                    {kick ? outcomeLabel(kick) : ''}
-                  </span>
-                </div>
-              );
-            })}
-            {awayKicks.length > 0 && (
-              <div style={{ fontSize: 11, color: 'var(--color-text-muted)', fontWeight: 600, marginTop: 8, textAlign: 'center' }}>
-                {awayScored} scored, {awayKicks.length - awayScored} missed
-              </div>
-            )}
-          </div>
+        <div style={{ display: 'flex', fontSize: 13, fontWeight: 700, color: 'var(--color-text)', marginBottom: 12 }}>
+          <div style={{ flex: 1, textAlign: 'right', paddingRight: 12 }}>{homeTeam?.name || 'Home'}</div>
+          <div style={{ width: 56, flexShrink: 0, textAlign: 'center' }} />
+          <div style={{ flex: 1, textAlign: 'left', paddingLeft: 12 }}>{awayTeam?.name || 'Away'}</div>
         </div>
+        {Array.from({ length: totalRounds }, (_, i) => {
+          const hk = homeKicks[i];
+          const ak = awayKicks[i];
+          return (
+            <div key={i} style={{
+              display: 'flex', alignItems: 'center', minHeight: 36,
+              borderBottom: i < totalRounds - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+            }}>
+              <div style={{ flex: 1, textAlign: 'right', paddingRight: 12, fontWeight: 500, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {hk?.player_name || ''}
+              </div>
+              <div style={{ width: 56, flexShrink: 0, textAlign: 'center', fontSize: 18, display: 'flex', justifyContent: 'center', gap: 8 }}>
+                <span style={{ width: 24 }}>{hk ? (hk.did_score ? '✅' : '❌') : ''}</span>
+                <span style={{ width: 24 }}>{ak ? (ak.did_score ? '✅' : '❌') : ''}</span>
+              </div>
+              <div style={{ flex: 1, textAlign: 'left', paddingLeft: 12, fontWeight: 500, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {ak?.player_name || ''}
+              </div>
+            </div>
+          );
+        })}
       </div>
     );
   }
@@ -822,36 +799,36 @@ function PenaltiesTab({ slug, events, fixture, homeTeamId, awayTeamId, homeTeam,
           Penalty Shootout
         </div>
       </div>
-      <div style={{ display: 'flex', gap: 16 }}>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8, color: 'var(--color-accent)', textAlign: 'center' }}>
-            {homeTeam?.name || 'Home'}
-          </div>
-          {homePens.length === 0 ? (
-            <div style={{ fontSize: 12, color: 'var(--color-text-muted)', padding: '8px 0' }}>No penalties recorded.</div>
-          ) : homePens.map((p, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, padding: '6px 0' }}>
-              <span style={{ fontSize: 16, flexShrink: 0 }}>✅</span>
-              <span style={{ flex: 1, fontWeight: 500 }}>{p.player_name}</span>
-              <span style={{ fontSize: 11, color: '#48BB78', fontWeight: 600 }}>Scored</span>
-            </div>
-          ))}
-        </div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8, color: 'var(--color-accent)', textAlign: 'center' }}>
-            {awayTeam?.name || 'Away'}
-          </div>
-          {awayPens.length === 0 ? (
-            <div style={{ fontSize: 12, color: 'var(--color-text-muted)', padding: '8px 0' }}>No penalties recorded.</div>
-          ) : awayPens.map((p, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, padding: '6px 0' }}>
-              <span style={{ fontSize: 16, flexShrink: 0 }}>✅</span>
-              <span style={{ flex: 1, fontWeight: 500 }}>{p.player_name}</span>
-              <span style={{ fontSize: 11, color: '#48BB78', fontWeight: 600 }}>Scored</span>
-            </div>
-          ))}
-        </div>
+      <div style={{ display: 'flex', fontSize: 13, fontWeight: 700, color: 'var(--color-text)', marginBottom: 12 }}>
+        <div style={{ flex: 1, textAlign: 'right', paddingRight: 12 }}>{homeTeam?.name || 'Home'}</div>
+        <div style={{ width: 56, flexShrink: 0, textAlign: 'center' }} />
+        <div style={{ flex: 1, textAlign: 'left', paddingLeft: 12 }}>{awayTeam?.name || 'Away'}</div>
       </div>
+      {homePens.length === 0 && awayPens.length === 0 ? (
+        <div style={{ fontSize: 12, color: 'var(--color-text-muted)', textAlign: 'center', padding: '12px 0' }}>No penalties recorded.</div>
+      ) : (
+        Array.from({ length: Math.max(homePens.length, awayPens.length) }, (_, i) => {
+          const hp = homePens[i];
+          const ap = awayPens[i];
+          return (
+            <div key={i} style={{
+              display: 'flex', alignItems: 'center', minHeight: 36,
+              borderBottom: '1px solid rgba(255,255,255,0.04)',
+            }}>
+              <div style={{ flex: 1, textAlign: 'right', paddingRight: 12, fontWeight: 500, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {hp?.player_name || ''}
+              </div>
+              <div style={{ width: 56, flexShrink: 0, textAlign: 'center', fontSize: 18, display: 'flex', justifyContent: 'center', gap: 8 }}>
+                <span style={{ width: 24 }}>{hp ? '✅' : ''}</span>
+                <span style={{ width: 24 }}>{ap ? '✅' : ''}</span>
+              </div>
+              <div style={{ flex: 1, textAlign: 'left', paddingLeft: 12, fontWeight: 500, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {ap?.player_name || ''}
+              </div>
+            </div>
+          );
+        })
+      )}
     </div>
   );
 }
