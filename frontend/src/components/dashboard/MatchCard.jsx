@@ -19,6 +19,15 @@ function tvLabel(channel) {
   return channel;
 }
 
+const BRACKET_ORDER = {
+  'Round of 32':   [74, 77, 73, 75, 83, 84, 81, 82, 76, 78, 79, 80, 86, 88, 85, 87],
+  'Round of 16':   [89, 90, 93, 94, 91, 92, 95, 96],
+  'Quarter-finals': [97, 98, 99, 100],
+  'Semi-finals':   [101, 102],
+  '3rd Place':     [103],
+  'Final':         [104],
+};
+
 function feederLabel(label, fixtureMap, roundPositions) {
   if (!label || label === 'null') return null;
   if (typeof label !== 'string') return null;
@@ -55,7 +64,10 @@ function buildRoundPositions(allFixtures) {
   }
   const pos = {};
   for (const stage of Object.keys(byStage)) {
-    const sorted = byStage[stage].sort((a, b) => new Date(a.date) - new Date(b.date));
+    const order = BRACKET_ORDER[stage];
+    const sorted = order
+      ? [...byStage[stage]].sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id))
+      : [...byStage[stage]].sort((a, b) => new Date(a.date) - new Date(b.date));
     sorted.forEach((f, i) => { pos[f.id] = i + 1; });
   }
   return pos;
