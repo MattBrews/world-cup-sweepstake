@@ -110,6 +110,19 @@ function MatchCardSmall({ fixture, homeTeam, awayTeam, teamToParticipant, isFini
       onMouseEnter={onClick && (isFinished || isLive) ? e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.3)'; } : undefined}
       onMouseLeave={onClick && (isFinished || isLive) ? e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = ''; } : undefined}
     >
+      {(isFinished || isLive) && (fixture.home_ht_score ?? fixture.away_ht_score) != null && (
+        <div style={{ fontSize: 10, fontWeight: 500, color: 'var(--color-text-muted)', whiteSpace: 'nowrap', textAlign: 'center', marginBottom: 1 }}>
+          HT {fixture.home_ht_score ?? '-'}:{fixture.away_ht_score ?? '-'}
+        </div>
+      )}
+      {(isFinished || isLive) && (fixture.home_regulation_score ?? fixture.away_regulation_score) != null &&
+       (fixture.home_score !== fixture.home_regulation_score ||
+        fixture.away_score !== fixture.away_regulation_score) && (
+        <div style={{ fontSize: 10, fontWeight: 500, color: 'var(--color-text-muted)', whiteSpace: 'nowrap', textAlign: 'center', marginBottom: 1 }}>
+          FT {fixture.home_regulation_score ?? '-'}:{fixture.away_regulation_score ?? '-'}
+        </div>
+      )}
+
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <div style={{ flex: 1, textAlign: 'right', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6, minWidth: 0 }}>
           {homeTeam?.logo_url && <img src={homeTeam.logo_url} alt="" style={{ width: 18, height: 18, flexShrink: 0 }} />}
@@ -125,32 +138,9 @@ function MatchCardSmall({ fixture, homeTeam, awayTeam, teamToParticipant, isFini
           flexShrink: 0,
           textAlign: 'center',
         }}>
-          <div>
-            {(fixture.home_ht_score ?? fixture.away_ht_score) != null && (
-              <div style={{ fontSize: 10, fontWeight: 500, color: 'var(--color-text-muted)', whiteSpace: 'nowrap', marginBottom: 1 }}>
-                HT {fixture.home_ht_score ?? '-'}:{fixture.away_ht_score ?? '-'}
-              </div>
-            )}
-            {(fixture.home_regulation_score ?? fixture.away_regulation_score) != null &&
-             (fixture.home_score !== fixture.home_regulation_score ||
-              fixture.away_score !== fixture.away_regulation_score) && (
-              <div style={{ fontSize: 10, fontWeight: 500, color: 'var(--color-text-muted)', whiteSpace: 'nowrap', marginBottom: 1 }}>
-                FT {fixture.home_regulation_score ?? '-'}:{fixture.away_regulation_score ?? '-'}
-              </div>
-            )}
-            <span style={{ whiteSpace: 'nowrap' }}>
-              {isFinished || isLive ? (fixture.home_score ?? '-') : '-'}:{isFinished || isLive ? (fixture.away_score ?? '-') : '-'}
-            </span>
-            {isFinished && fixture.home_pen_score != null ? (
-              <div style={{ fontSize: 10, color: 'var(--color-text-muted)', fontWeight: 600, marginTop: 1 }}>
-                ({fixture.home_pen_score}:{fixture.away_pen_score})
-              </div>
-            ) : isFinished ? (
-              <div style={{ fontSize: 10, visibility: 'hidden', marginTop: 1 }}>
-                (0:0)
-              </div>
-            ) : null}
-          </div>
+          <span style={{ whiteSpace: 'nowrap' }}>
+            {isFinished || isLive ? (fixture.home_score ?? '-') : '-'}:{isFinished || isLive ? (fixture.away_score ?? '-') : '-'}
+          </span>
         </div>
 
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
@@ -161,6 +151,12 @@ function MatchCardSmall({ fixture, homeTeam, awayTeam, teamToParticipant, isFini
           {awayTeam?.logo_url && <img src={awayTeam.logo_url} alt="" style={{ width: 18, height: 18, flexShrink: 0 }} />}
         </div>
       </div>
+
+      {isFinished && fixture.home_pen_score != null && (
+        <div style={{ fontSize: 10, color: 'var(--color-text-muted)', fontWeight: 600, whiteSpace: 'nowrap', textAlign: 'center', marginTop: 1 }}>
+          ({fixture.home_pen_score}:{fixture.away_pen_score})
+        </div>
+      )}
     </div>
   );
 }

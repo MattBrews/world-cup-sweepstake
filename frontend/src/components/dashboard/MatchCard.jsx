@@ -139,6 +139,19 @@ export default function MatchCard({ fixture, homeTeam, awayTeam, participants, t
         </div>
       )}
 
+      {(isFinished || isLive) && (fixture.home_ht_score ?? fixture.away_ht_score) != null && (
+        <div style={{ fontSize: 10, fontWeight: 500, color: 'var(--color-text-muted)', whiteSpace: 'nowrap', textAlign: 'center', marginBottom: 1 }}>
+          HT {fixture.home_ht_score ?? '-'}:{fixture.away_ht_score ?? '-'}
+        </div>
+      )}
+      {(isFinished || isLive) && (fixture.home_regulation_score ?? fixture.away_regulation_score) != null &&
+       (fixture.home_score !== fixture.home_regulation_score ||
+        fixture.away_score !== fixture.away_regulation_score) && (
+        <div style={{ fontSize: 10, fontWeight: 500, color: 'var(--color-text-muted)', whiteSpace: 'nowrap', textAlign: 'center', marginBottom: 1 }}>
+          FT {fixture.home_regulation_score ?? '-'}:{fixture.away_regulation_score ?? '-'}
+        </div>
+      )}
+
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <div style={{ flex: 1, textAlign: 'right', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6, minWidth: 0 }}>
           {homeTeam?.logo_url && <img src={homeTeam.logo_url} alt="" style={{ width: 18, height: 18, flexShrink: 0 }} />}
@@ -155,32 +168,9 @@ export default function MatchCard({ fixture, homeTeam, awayTeam, participants, t
           textAlign: 'center',
         }}>
           {isFinished || isLive ? (
-            <>
-              {(fixture.home_ht_score ?? fixture.away_ht_score) != null && (
-                <div style={{ fontSize: 10, fontWeight: 500, color: 'var(--color-text-muted)', whiteSpace: 'nowrap', marginBottom: 1 }}>
-                  HT {fixture.home_ht_score ?? '-'}:{fixture.away_ht_score ?? '-'}
-                </div>
-              )}
-              {(fixture.home_regulation_score ?? fixture.away_regulation_score) != null &&
-               (fixture.home_score !== fixture.home_regulation_score ||
-                fixture.away_score !== fixture.away_regulation_score) && (
-                <div style={{ fontSize: 10, fontWeight: 500, color: 'var(--color-text-muted)', whiteSpace: 'nowrap', marginBottom: 1 }}>
-                  FT {fixture.home_regulation_score ?? '-'}:{fixture.away_regulation_score ?? '-'}
-                </div>
-              )}
-              <span style={{ color: 'var(--color-text)', whiteSpace: 'nowrap' }}>
-                {fixture.home_score ?? '-'}:{fixture.away_score ?? '-'}
-              </span>
-              {isFinished && fixture.home_pen_score != null ? (
-                <div style={{ fontSize: 10, color: 'var(--color-text-muted)', fontWeight: 600, whiteSpace: 'nowrap', marginTop: 1 }}>
-                  ({fixture.home_pen_score}:{fixture.away_pen_score})
-                </div>
-              ) : isFinished ? (
-                <div style={{ fontSize: 10, visibility: 'hidden', whiteSpace: 'nowrap', marginTop: 1 }}>
-                  (0:0)
-                </div>
-              ) : null}
-            </>
+            <span style={{ color: 'var(--color-text)', whiteSpace: 'nowrap' }}>
+              {fixture.home_score ?? '-'}:{fixture.away_score ?? '-'}
+            </span>
           ) : isAwaiting ? (
             <span style={{ color: 'var(--token-4)', fontSize: 13, whiteSpace: 'nowrap' }}>?:?</span>
           ) : (
@@ -196,6 +186,12 @@ export default function MatchCard({ fixture, homeTeam, awayTeam, participants, t
           {awayTeam?.logo_url && <img src={awayTeam.logo_url} alt="" style={{ width: 18, height: 18, flexShrink: 0 }} />}
         </div>
       </div>
+
+      {isFinished && fixture.home_pen_score != null && (
+        <div style={{ fontSize: 10, color: 'var(--color-text-muted)', fontWeight: 600, whiteSpace: 'nowrap', textAlign: 'center', marginTop: 1 }}>
+          ({fixture.home_pen_score}:{fixture.away_pen_score})
+        </div>
+      )}
     </div>
   );
 }
