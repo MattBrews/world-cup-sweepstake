@@ -131,6 +131,13 @@ function MatchCardSmall({ fixture, homeTeam, awayTeam, teamToParticipant, isFini
                 HT {fixture.home_ht_score ?? '-'}:{fixture.away_ht_score ?? '-'}
               </div>
             )}
+            {(fixture.home_regulation_score ?? fixture.away_regulation_score) != null &&
+             (fixture.home_score !== fixture.home_regulation_score ||
+              fixture.away_score !== fixture.away_regulation_score) && (
+              <div style={{ fontSize: 10, fontWeight: 500, color: 'var(--color-text-muted)', whiteSpace: 'nowrap', marginBottom: 1 }}>
+                FT {fixture.home_regulation_score ?? '-'}:{fixture.away_regulation_score ?? '-'}
+              </div>
+            )}
             <span style={{ whiteSpace: 'nowrap' }}>
               {isFinished || isLive ? (fixture.home_score ?? '-') : '-'}:{isFinished || isLive ? (fixture.away_score ?? '-') : '-'}
             </span>

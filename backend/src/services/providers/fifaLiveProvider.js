@@ -192,6 +192,7 @@ export class FifaLiveProvider extends DataService {
           }
         }
 
+        this._deriveScoresFromEvents(fixture.id, fixture.home_team_id, fixture.away_team_id);
         this._updatePenaltyScoresFromEvents(fixture.id, fixture.home_team_id, fixture.away_team_id);
 
         db.prepare(
@@ -443,6 +444,7 @@ export class FifaLiveProvider extends DataService {
           }
         }
 
+        this._deriveScoresFromEvents(fixture.id, fixture.home_team_id, fixture.away_team_id);
         this._updatePenaltyScoresFromEvents(fixture.id, fixture.home_team_id, fixture.away_team_id);
 
         const liveFixtureRow = db.prepare('SELECT home_pen_score, away_pen_score, date FROM cached_fixtures WHERE id = ?').get(fixture.id);
@@ -488,6 +490,42 @@ export class FifaLiveProvider extends DataService {
     }
 
     console.log(`[fifaLive] Recalculated top scorers: ${goals.length} players`);
+  }
+
+  _deriveScoresFromEvents(matchId, homeTeamId, awayTeamId) {
+    const db = getDb();
+    const goals = db.prepare(
+      `SELECT team_id, period FROM match_events
+       WHERE match_id = ? AND type = 'GOAL'`
+    ).all(matchId);
+
+    let homeReg = 0, awayReg = 0, homeET = 0, awayET = 0;
+
+    for (const g of goals) {
+      const isHome = Number(g.team_id) === Number(homeTeamId);
+      const isAway = Number(g.team_id) === Number(awayTeamId);
+      const period = g.period || 3;
+
+      if (period >= 10) continue;
+
+      if (period >= 7) {
+        if (isHome) homeET++;
+        if (isAway) awayET++;
+      } else {
+        if (isHome) homeReg++;
+        if (isAway) awayReg++;
+      }
+    }
+
+    const totalHome = homeReg + homeET;
+    const totalAway = awayReg + awayET;
+
+    db.prepare(
+      `UPDATE cached_fixtures
+       SET home_score = ?, away_score = ?,
+           home_regulation_score = ?, away_regulation_score = ?
+       WHERE id = ?`
+    ).run(totalHome, totalAway, homeReg, awayReg, matchId);
   }
 
   _updatePenaltyScoresFromEvents(matchId, homeTeamId, awayTeamId) {

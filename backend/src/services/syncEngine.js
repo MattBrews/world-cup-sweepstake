@@ -6,6 +6,7 @@ import { FifaTvProvider } from './providers/fifaTvProvider.js';
 import { FifaLiveProvider } from './providers/fifaLiveProvider.js';
 import { recalculateStandings } from './standingsCalculator.js';
 import { seedMockData } from './seedMockData.js';
+import { resolveKnockoutPlaceholders } from './knockoutResolver.js';
 
 const openFootball = new OpenFootballProvider();
 const upboundWeb = new UpboundWebProvider();
@@ -61,6 +62,16 @@ export async function syncLive() {
     logSync('fifaMatchDetails', 'error', err.message);
   }
 
+  try {
+    const resolved = resolveKnockoutPlaceholders();
+    if (resolved > 0) {
+      result.knockoutResolved = resolved;
+      logSync('knockoutResolver', 'success', `${resolved} placeholders resolved`);
+    }
+  } catch (err) {
+    logSync('knockoutResolver', 'error', err.message);
+  }
+
   const db = getDb();
   const lifecycleCounts = db.prepare(`
     SELECT lifecycle_state, COUNT(*) as count
@@ -100,6 +111,16 @@ export async function syncAll() {
     }
   } catch (err) {
     logSync('upbound-web', 'error', err.message);
+  }
+
+  try {
+    const resolved = resolveKnockoutPlaceholders();
+    if (resolved > 0) {
+      result.knockoutResolved = resolved;
+      logSync('knockoutResolver', 'success', `${resolved} placeholders resolved`);
+    }
+  } catch (err) {
+    logSync('knockoutResolver', 'error', err.message);
   }
 
   try {

@@ -93,6 +93,10 @@ export function runMigrations() {
     // column already exists
   }
 
+  // Add regulation (90-minute) score columns
+  try { db.exec("ALTER TABLE cached_fixtures ADD COLUMN home_regulation_score INTEGER"); } catch {}
+  try { db.exec("ALTER TABLE cached_fixtures ADD COLUMN away_regulation_score INTEGER"); } catch {}
+
   // Add FIFA match ID, formations, attendance, referee
   try { db.exec("ALTER TABLE cached_fixtures ADD COLUMN api_match_id TEXT"); } catch {}
   try { db.exec("ALTER TABLE cached_fixtures ADD COLUMN home_formation TEXT"); } catch {}

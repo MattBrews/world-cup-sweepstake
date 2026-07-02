@@ -180,6 +180,13 @@ export default function MatchDetailModal({ publicId, matchId, onClose }) {
                         HT: {fixture.home_ht_score} : {fixture.away_ht_score}
                       </div>
                     )}
+                    {(fixture.home_regulation_score ?? fixture.away_regulation_score) != null &&
+                     (fixture.home_score !== fixture.home_regulation_score ||
+                      fixture.away_score !== fixture.away_regulation_score) && (
+                      <div style={{ fontSize: 11, color: 'var(--color-text-muted)', fontWeight: 600, marginBottom: 2 }}>
+                        FT: {fixture.home_regulation_score} : {fixture.away_regulation_score}
+                      </div>
+                    )}
                     <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--color-accent)' }}>
                       {fixture.status === 'FT' || fixture.status === 'IN_PROGRESS' || fixture.lifecycle_state === 'IN_PROGRESS'
                         ? `${fixture.home_score ?? '-'} : ${fixture.away_score ?? '-'}`
