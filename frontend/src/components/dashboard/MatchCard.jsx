@@ -97,6 +97,7 @@ export default function MatchCard({ fixture, homeTeam, awayTeam, participants, t
       onClick={onClick && (isFinished || isLive) ? () => onClick(fixture.id) : undefined}
       style={{
         padding: '14px 16px',
+        width: '100%',
         borderLeft: `3px solid ${isLive ? 'var(--color-accent)' : isFinished ? 'var(--token-7)' : isAwaiting ? 'var(--token-4)' : 'rgba(255,255,255,0.1)'}`,
         cursor: onClick && (isFinished || isLive) ? 'pointer' : undefined,
         transition: onClick && (isFinished || isLive) ? 'transform 0.15s, box-shadow 0.15s' : undefined,
