@@ -300,12 +300,14 @@ function FinalStage({ roundFixtures, getTeam, teamToParticipant, fixtureMap, rou
 
 export default function BracketView({ fixtures, allFixtures = [], teams, participants = [], currentStage, onClick }) {
   const carouselRef = useRef(null);
+  const headerRef = useRef(null);
   const [slidePx, setSlidePx] = useState(0);
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
   const [dragOffset, setDragOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [viewportHeight, setViewportHeight] = useState(typeof window !== 'undefined' ? window.innerHeight : 800);
+  const [headerHeight, setHeaderHeight] = useState(50);
 
   const fixtureMap = {};
   for (const f of allFixtures) fixtureMap[f.id] = f;
@@ -392,6 +394,19 @@ export default function BracketView({ fixtures, allFixtures = [], teams, partici
     return () => window.removeEventListener('resize', update);
   }, []);
 
+  useEffect(() => {
+    if (!headerRef.current) return;
+    const measure = () => {
+      if (headerRef.current) {
+        setHeaderHeight(headerRef.current.getBoundingClientRect().height);
+      }
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(headerRef.current);
+    return () => observer.disconnect();
+  }, []);
+
   const handleTouchStart = (e) => {
     touchStartX.current = e.touches[0].clientX;
     touchStartY.current = e.touches[0].clientY;
@@ -452,12 +467,11 @@ export default function BracketView({ fixtures, allFixtures = [], teams, partici
 
   const finalStageHeight = BASE_UNIT / 2 + 260;
   const contentHeight = activeIdx >= 0 ? roundPairs[roundOrder[activeIdx]] * BASE_UNIT : finalStageHeight;
-  const headerHeight = 50;
   const activeSlideHeight = Math.max(contentHeight, viewportHeight - headerHeight);
 
   return (
     <div style={{ width: '100%' }}>
-      <div className="bracket-carousel-header" style={{
+      <div ref={headerRef} className="bracket-carousel-header" style={{
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
