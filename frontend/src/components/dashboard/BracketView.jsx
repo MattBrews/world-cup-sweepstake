@@ -448,7 +448,6 @@ export default function BracketView({ fixtures, allFixtures = [], teams, partici
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 12,
         gap: 12,
       }}>
         <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text)' }}>

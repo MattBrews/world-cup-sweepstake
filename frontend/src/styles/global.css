@@ -94,3 +94,11 @@ input, select {
 .bracket-pair.bracket-pair-animated {
   transition: height 0.4s ease;
 }
+
+.bracket-carousel-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--color-bg);
+  padding: 8px 0 14px;
+}
