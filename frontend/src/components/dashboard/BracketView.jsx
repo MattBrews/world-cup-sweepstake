@@ -451,10 +451,23 @@ export default function BracketView({ fixtures, allFixtures = [], teams, partici
   }
 
   const finalStageHeight = BASE_UNIT / 2 + 260;
-  const activeSlideHeight = Math.max(
-    activeIdx >= 0 ? roundPairs[roundOrder[activeIdx]] * BASE_UNIT : finalStageHeight,
-    viewportHeight
-  );
+  const contentHeight = activeIdx >= 0 ? roundPairs[roundOrder[activeIdx]] * BASE_UNIT : finalStageHeight;
+  const activeSlideHeight = Math.max(contentHeight, viewportHeight);
+
+  useEffect(() => {
+    if (!carouselRef.current) return;
+    const header = carouselRef.current.parentElement?.querySelector('.bracket-carousel-header');
+    const headerHeight = header ? header.getBoundingClientRect().height : 50;
+    const rect = carouselRef.current.getBoundingClientRect();
+    if (rect.top < headerHeight) {
+      const contentFits = contentHeight <= window.innerHeight - headerHeight;
+      const scrolledPast = rect.bottom < headerHeight;
+      if (contentFits || scrolledPast) {
+        window.scrollTo({ top: window.scrollY + rect.top - headerHeight, behavior: 'smooth' });
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeSlide]);
 
   return (
     <div style={{ width: '100%' }}>
