@@ -305,6 +305,10 @@ function FinalStage({ roundFixtures, getTeam, teamToParticipant, fixtureMap, rou
 export default function BracketView({ fixtures, allFixtures = [], teams, participants = [], currentStage, onClick }) {
   const carouselRef = useRef(null);
   const [slidePx, setSlidePx] = useState(0);
+  const touchStartX = useRef(0);
+  const touchStartY = useRef(0);
+  const [dragOffset, setDragOffset] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
 
   const fixtureMap = {};
   for (const f of allFixtures) fixtureMap[f.id] = f;
@@ -383,6 +387,36 @@ export default function BracketView({ fixtures, allFixtures = [], teams, partici
       observer.disconnect();
     };
   }, []);
+
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+    setIsDragging(true);
+  };
+
+  const handleTouchMove = (e) => {
+    if (!isDragging) return;
+    const deltaX = e.touches[0].clientX - touchStartX.current;
+    const deltaY = e.touches[0].clientY - touchStartY.current;
+    if (Math.abs(deltaX) > Math.abs(deltaY)) {
+      setDragOffset(deltaX);
+    }
+  };
+
+  const handleTouchEnd = (e) => {
+    if (!isDragging) return;
+    setIsDragging(false);
+    const deltaX = e.changedTouches[0].clientX - touchStartX.current;
+    const deltaY = e.changedTouches[0].clientY - touchStartY.current;
+    if (Math.abs(deltaX) > 50 && Math.abs(deltaX) > Math.abs(deltaY) * 1.5) {
+      if (deltaX < 0) {
+        setActiveSlide(prev => Math.min(prev + 1, totalSlides - 1));
+      } else {
+        setActiveSlide(prev => Math.max(prev - 1, 0));
+      }
+    }
+    setDragOffset(0);
+  };
 
   const activeDef = SLIDES[activeSlide];
   const totalSlides = SLIDES.length;
@@ -500,11 +534,19 @@ export default function BracketView({ fixtures, allFixtures = [], teams, partici
         </div>
       </div>
 
-      <div ref={carouselRef} style={{ position: 'relative', overflow: 'hidden', width: '100%' }}>
+      <div
+        ref={carouselRef}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        style={{ position: 'relative', overflow: 'hidden', width: '100%', touchAction: 'pan-y' }}
+      >
         <div style={{
           display: 'flex',
-          transition: 'transform 0.4s ease',
-          transform: slidePx > 0 ? `translateX(${-activeSlide * slidePx}px)` : undefined,
+          transition: isDragging ? 'none' : 'transform 0.4s ease',
+          transform: slidePx > 0
+            ? `translateX(${-activeSlide * slidePx + (isDragging ? dragOffset : 0)}px)`
+            : undefined,
         }}>
           {SLIDES.map((slide, si) => {
             const isLast = !slide.next;

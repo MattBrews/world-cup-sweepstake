@@ -148,7 +148,7 @@ export default function DashboardPage() {
             .sort((a, b) => new Date(a.date) - new Date(b.date))
             .slice(0, 5)
             .map(f => (
-              <div key={f.id} style={{ width: 240, flexShrink: 0 }}>
+              <div key={f.id} style={{ width: 240, flexShrink: 0, display: 'flex' }}>
                 <MatchCard
                   fixture={f}
                   homeTeam={teamMap[f.home_team_id]}
@@ -173,7 +173,7 @@ export default function DashboardPage() {
           </h3>
           <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
             {liveFixtures.map(f => (
-              <div key={f.id} style={{ width: 240, flexShrink: 0 }}>
+              <div key={f.id} style={{ width: 240, flexShrink: 0, display: 'flex' }}>
                 <MatchCard
                   fixture={f}
                   homeTeam={teamMap[f.home_team_id]}
@@ -196,7 +196,7 @@ export default function DashboardPage() {
           </h3>
           <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
             {recentResults.map(f => (
-              <div key={f.id} style={{ width: 240, flexShrink: 0 }}>
+              <div key={f.id} style={{ width: 240, flexShrink: 0, display: 'flex' }}>
                 <MatchCard
                   fixture={f}
                   homeTeam={teamMap[f.home_team_id]}
