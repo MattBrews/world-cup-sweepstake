@@ -442,6 +442,10 @@ export default function BracketView({ fixtures, allFixtures = [], teams, partici
     }
   }
 
+  const activeSlideHeight = activeIdx >= 0
+    ? roundPairs[roundOrder[activeIdx]] * BASE_UNIT
+    : (pairHeightByRound['Semi-finals'] || BASE_UNIT) / 2 + 260;
+
   return (
     <div style={{ width: '100%' }}>
       <div className="bracket-carousel-header" style={{
@@ -534,7 +538,7 @@ export default function BracketView({ fixtures, allFixtures = [], teams, partici
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        style={{ position: 'relative', overflow: 'hidden', width: '100%', touchAction: 'pan-y' }}
+        style={{ position: 'relative', overflow: 'hidden', width: '100%', touchAction: 'pan-y', height: activeSlideHeight, transition: isDragging ? 'none' : 'height 0.4s ease' }}
       >
         <div style={{
           display: 'flex',
