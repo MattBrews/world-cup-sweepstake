@@ -305,6 +305,7 @@ export default function BracketView({ fixtures, allFixtures = [], teams, partici
   const touchStartY = useRef(0);
   const [dragOffset, setDragOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [viewportHeight, setViewportHeight] = useState(typeof window !== 'undefined' ? window.innerHeight : 800);
 
   const fixtureMap = {};
   for (const f of allFixtures) fixtureMap[f.id] = f;
@@ -384,6 +385,13 @@ export default function BracketView({ fixtures, allFixtures = [], teams, partici
     };
   }, []);
 
+  useEffect(() => {
+    const update = () => setViewportHeight(window.innerHeight);
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
+
   const handleTouchStart = (e) => {
     touchStartX.current = e.touches[0].clientX;
     touchStartY.current = e.touches[0].clientY;
@@ -442,9 +450,11 @@ export default function BracketView({ fixtures, allFixtures = [], teams, partici
     }
   }
 
-  const activeSlideHeight = activeIdx >= 0
-    ? roundPairs[roundOrder[activeIdx]] * BASE_UNIT
-    : (pairHeightByRound['Semi-finals'] || BASE_UNIT) / 2 + 260;
+  const finalStageHeight = BASE_UNIT / 2 + 260;
+  const activeSlideHeight = Math.max(
+    activeIdx >= 0 ? roundPairs[roundOrder[activeIdx]] * BASE_UNIT : finalStageHeight,
+    viewportHeight
+  );
 
   return (
     <div style={{ width: '100%' }}>
