@@ -97,14 +97,17 @@ export class FifaLiveProvider extends DataService {
 
         const homePenScore = data.HomeTeamPenaltyScore ?? null;
         const awayPenScore = data.AwayTeamPenaltyScore ?? null;
+        const homeScore = data.HomeTeam?.Score ?? null;
+        const awayScore = data.AwayTeam?.Score ?? null;
 
         db.prepare(
           `UPDATE cached_fixtures
            SET home_formation = ?, away_formation = ?, attendance = ?, referee = ?,
                home_pen_score = ?, away_pen_score = ?,
+               home_score = ?, away_score = ?,
                last_synced_at = datetime('now')
            WHERE id = ?`
-        ).run(homeFormation, awayFormation, attendance, referee, homePenScore, awayPenScore, fixture.id);
+        ).run(homeFormation, awayFormation, attendance, referee, homePenScore, awayPenScore, homeScore, awayScore, fixture.id);
 
         const goals = data.HomeTeam?.Goals || [];
         for (const g of data.AwayTeam?.Goals || []) goals.push(g);
@@ -444,7 +447,6 @@ export class FifaLiveProvider extends DataService {
           }
         }
 
-        this._deriveScoresFromEvents(fixture.id, fixture.home_team_id, fixture.away_team_id);
         this._updatePenaltyScoresFromEvents(fixture.id, fixture.home_team_id, fixture.away_team_id);
 
         const liveFixtureRow = db.prepare('SELECT home_pen_score, away_pen_score, date FROM cached_fixtures WHERE id = ?').get(fixture.id);
@@ -494,6 +496,13 @@ export class FifaLiveProvider extends DataService {
 
   _deriveScoresFromEvents(matchId, homeTeamId, awayTeamId) {
     const db = getDb();
+
+    const nullTeamGoals = db.prepare(
+      `SELECT COUNT(*) as cnt FROM match_events
+       WHERE match_id = ? AND type = 'GOAL' AND team_id IS NULL`
+    ).get(matchId);
+    if (nullTeamGoals.cnt > 0) return;
+
     const goals = db.prepare(
       `SELECT team_id, period FROM match_events
        WHERE match_id = ? AND type = 'GOAL'`
